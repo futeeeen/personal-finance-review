@@ -47,7 +47,8 @@ def run_browser_automation():
             print("4. 執行 `python data_cleaner.py` 即可自動完成資料洗滌與更新儀表板！")
             return
             
-        context = browser.new_context(no_viewport=True)
+        # 強制指定一個標準的大螢幕桌面解析度 (1440x900)，避免觸發行動版網頁的底欄或隱藏選單
+        context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
         
         print("[爬蟲] 正在載入新版財政部電子發票整合服務平台登入頁面...")
@@ -59,7 +60,6 @@ def run_browser_automation():
         # 嘗試自動填寫手機號碼與驗證碼
         print("[爬蟲] 嘗試為您自動填入登入欄位...")
         try:
-            # 搜尋手機號碼輸入框
             phone_selectors = [
                 "input[name*='phone']", "input[name*='mobile']", "input[id*='phone']", 
                 "input[id*='mobile']", "input[placeholder*='手機']", "input[placeholder*='帳號']",
@@ -73,7 +73,6 @@ def run_browser_automation():
                         phone_filled = True
                         break
             
-            # 搜尋密碼輸入框
             pwd_selectors = [
                 "input[type='password']", "input[name*='pwd']", "input[name*='encrypt']",
                 "input[placeholder*='驗證碼']", "input[placeholder*='密碼']", "input[id*='password']"
@@ -107,7 +106,6 @@ def run_browser_automation():
             if page.is_closed():
                 break
             current_url = page.url
-            # 登入成功後 URL 會轉移，不再是 accounts/login/mw 或含有 login_challenge
             if "login" not in current_url and "accounts/login" not in current_url:
                 logged_in = True
                 break
@@ -120,30 +118,26 @@ def run_browser_automation():
         print("[爬蟲] 偵測到登入成功！機器人正在接管瀏覽器...")
         page.wait_for_timeout(3000) # 等待登入後首頁載入完成
         
-        # 2. 自動點選『載具消費發票查詢』選單
-        print("[爬蟲] 正在尋找發票查詢選單...")
-        menu_clicked = False
+        # 2. 自動點選『載具消費發票查詢』頁面 (直接網頁跳轉，避開行動版/選單點擊問題)
+        # 新版電子發票平台桌上型的發票查詢路徑為 btc501w
+        print("[爬蟲] 正在直接導航至『載具消費發票查詢』頁面...")
         try:
-            # 優先搜尋左側選單的文字連結
-            menu_selectors = [
-                "text=載具消費發票查詢", "text=發票查詢與捐贈", 
-                "a:has-text('載具消費')", "a:has-text('發票查詢')"
-            ]
-            for sel in menu_selectors:
-                locator = page.locator(sel)
-                if locator.count() > 0 and locator.first.is_visible():
-                    locator.first.click()
-                    print("[爬蟲] [OK] 已自動點選『載具消費發票查詢』選單。")
-                    menu_clicked = True
-                    break
+            # 優先嘗試導航到桌面版查詢頁
+            page.goto("https://www.einvoice.nat.gov.tw/portal/btc/desktop/btc501w/main", timeout=15000)
+            page.wait_for_timeout(2000)
             
-            if not menu_clicked:
-                print("[提示] 找不到選單元素，請您手動點擊瀏覽器左側的『載具消費發票查詢』...")
-                page.wait_for_selector("text=載具消費發票查詢", timeout=30000)
-                page.locator("text=載具消費發票查詢").first.click()
-                print("[爬蟲] 已手動點擊引導，接手進行。")
+            # 若不在 btc501w 頁面，嘗試行動版查詢頁
+            if "btc501w" not in page.url:
+                page.goto("https://www.einvoice.nat.gov.tw/portal/btc/mobile/btc501w/main", timeout=15000)
+                page.wait_for_timeout(2000)
+                
+            print(f"[爬蟲] 導航成功，當前頁面: {page.url}")
         except Exception as e:
-            print(f"[提示] 自動點選選單略過，請手動在網頁點擊『載具消費發票查詢』: {e}")
+            print(f"[提示] 直接導航失敗，嘗試進行選單搜尋點擊: {e}")
+            try:
+                page.locator("text=載具消費發票查詢").first.click()
+            except Exception:
+                pass
             
         page.wait_for_timeout(2000) # 等待查詢頁面載入
         
@@ -154,33 +148,74 @@ def run_browser_automation():
             start_date_str = "2026/01/01"
             end_date_str = "2026/05/29"
             
-            # 尋找開始日期輸入框
-            start_input = page.locator("input[name*='start'], input[id*='start'], input[placeholder*='開始'], input[placeholder*='起始']").first
-            if start_input.is_visible():
+            # 使用獨立 CSS 選擇器列表逐一嘗試，避免 comma-separated 混用 text 的解析錯誤
+            start_selectors = [
+                "input[name*='start']", "input[id*='start']", "input[name*='startDate']",
+                "input[placeholder*='開始']", "input[placeholder*='起']", "input[id*='startDate']"
+            ]
+            
+            start_input = None
+            for sel in start_selectors:
+                loc = page.locator(sel)
+                if loc.count() > 0 and loc.first.is_visible():
+                    start_input = loc.first
+                    break
+                    
+            if start_input:
                 start_input.click()
                 page.keyboard.press("Control+A")
                 page.keyboard.press("Backspace")
                 start_input.fill(start_date_str)
-                print(f"[爬蟲] 已自動填入開始日期: {start_date_str}")
+                print(f"[爬蟲] [OK] 已自動填入開始日期: {start_date_str}")
+            else:
+                print("[提示] 未能自動定位開始日期框，採用網頁預設值。")
                 
-            # 尋找結束日期輸入框
-            end_input = page.locator("input[name*='end'], input[id*='end'], input[placeholder*='結束']").first
-            if end_input.is_visible():
+            end_selectors = [
+                "input[name*='end']", "input[id*='end']", "input[name*='endDate']",
+                "input[placeholder*='結束']", "input[id*='endDate']"
+            ]
+            
+            end_input = None
+            for sel in end_selectors:
+                loc = page.locator(sel)
+                if loc.count() > 0 and loc.first.is_visible():
+                    end_input = loc.first
+                    break
+                    
+            if end_input:
                 end_input.click()
                 page.keyboard.press("Control+A")
                 page.keyboard.press("Backspace")
                 end_input.fill(end_date_str)
-                print(f"[爬蟲] 已自動填入結束日期: {end_date_str}")
+                print(f"[爬蟲] [OK] 已自動填入結束日期: {end_date_str}")
+            else:
+                print("[提示] 未能自動定位結束日期框，採用網頁預設值。")
                 
-            # 尋找並點擊查詢按鈕
-            query_btn = page.locator("button:has-text('查詢'), input[type='button'][value='查詢'], input[type='submit'][value='查詢'], a:has-text('查詢')").first
-            if query_btn.is_visible():
+            # 尋找並點擊查詢按鈕 (以獨立選擇器尋找，防止 Playwright 語法崩潰)
+            query_btn_selectors = [
+                "button:has-text('查詢')", "input[type='button'][value='查詢']", 
+                "input[type='submit'][value='查詢']", "button[id*='query']", 
+                "button[id*='search']", "text=查詢"
+            ]
+            
+            query_btn = None
+            for sel in query_btn_selectors:
+                try:
+                    loc = page.locator(sel)
+                    if loc.count() > 0 and loc.first.is_visible():
+                        query_btn = loc.first
+                        break
+                except Exception:
+                    continue
+                    
+            if query_btn:
                 query_btn.click()
-                print("[爬蟲] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
-                page.wait_for_timeout(4000)
+                print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
+                page.wait_for_timeout(5000) # 給予 5 秒完整載入發票清單
                 query_success = True
             else:
-                print("[提示] 找不到自動查詢按鈕，請在瀏覽器中點擊『查詢』...")
+                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選『查詢』按鈕。")
+                page.wait_for_timeout(3000)
         except Exception as e:
             print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")
             
@@ -188,12 +223,28 @@ def run_browser_automation():
         print("[爬蟲] 正在尋找 CSV 下載按鈕...")
         download_success = False
         try:
-            # 等待下載按鈕出現
-            download_btn = page.locator("button:has-text('下載'), button:has-text('匯出'), input[value*='下載'], input[value*='匯出'], a:has-text('下載'), a:has-text('匯出'), text=下載明細CSV").first
+            # 獨立的選擇器列表，避免 comma-separated 混合選擇器的解析錯誤
+            download_selectors = [
+                "text=下載明細CSV", "text=下載明細", "text=下載", "text=匯出",
+                "button:has-text('下載')", "button:has-text('匯出')", 
+                "input[value*='下載']", "input[value*='匯出']", 
+                "a:has-text('下載')", "a:has-text('匯出')", 
+                "button[id*='download']", "a[id*='download']"
+            ]
             
-            if download_btn.is_visible():
-                print("[爬蟲] 偵測到下載按鈕！啟動自動下載攔截器...")
-                with page.expect_download(timeout=15000) as download_info:
+            download_btn = None
+            for sel in download_selectors:
+                try:
+                    loc = page.locator(sel)
+                    if loc.count() > 0 and loc.first.is_visible():
+                        download_btn = loc.first
+                        break
+                except Exception:
+                    continue
+            
+            if download_btn:
+                print(f"[爬蟲] 偵測到下載按鈕！啟動自動下載攔截器...")
+                with page.expect_download(timeout=20000) as download_info:
                     download_btn.click()
                 download = download_info.value
                 

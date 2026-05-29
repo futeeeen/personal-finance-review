@@ -44,45 +44,97 @@ def parse_taiwan_date(date_str):
 def classify_item(item_desc, seller_name):
     """
     利用品項描述與商家名稱，自動進行消費分類標籤標記。
+    適用於台灣本地消費發票與各類便利商店/餐飲店之商品特徵。
     """
     desc = str(item_desc).lower()
     seller = str(seller_name).lower()
     
-    # 1. 飲食分類
-    food_kws = ['便當', '燒肉', '茶', '綠茶', '紅茶', '奶茶', '咖啡', '拿鐵', '飯', '麵', '壽司', 
-                '套餐', '鷄塊', '薯條', '蛋糕', '巧克力', '蘋果', '鮮乳', '水', '洋芋片', '吐司', 
-                '蛋', '御飯糰', '冰', '飲料', '餐', '牛排', '火鍋', '壽喜燒', '舒芙蕾', '食']
-    food_sellers = ['星巴克', '麥當勞', '爭鮮', '超商', '便利商店', '全家', '統一超商', '萊爾富', 'ok超商', '美廉社']
+    # 1. 飲食分類 (Food & Beverage)
+    food_kws = [
+        # 主食與餐點
+        '便當', '燒肉', '飯', '麵', '拉麵', '涼麵', '炒麵', '壽司', '手卷', '茶碗蒸', '湯包', '小籠包',
+        '水餃', '鍋貼', '堡', '漢堡', '起司堡', '三明治', '吐司', '麵包', '披薩', 'pizza', '章魚燒',
+        '沙拉', '烤雞', '炸雞', '雞塊', '鷄塊', '雞排', '雞腿', '雞肉', '雞翅', '雞軟骨', '烤肉', '燒烤',
+        '火鍋', '鍋物', '壽喜燒', '套餐', '餐點', '特餐', '分享餐', '餐費', '餐飲', '料理', '食',
+        # 飲料與水
+        '茶', '紅茶', '綠茶', '奶茶', '青茶', '包種', '普洱', '烏龍', '拿鐵', '咖啡', '飲品', '飲料',
+        '果汁', '優格', '優酪', '鮮乳', '牛奶', '水', '礦泉水', '可樂', '汽水',
+        # 甜點與點心
+        '蛋糕', '提拉米蘇', '麻糬', '泡芙', '甜甜圈', '雪糕', '冰淇淋', '蛋捲冰', '冰', '巧克力',
+        '布丁', '舒芙蕾', '洋芋片', '薯條', '仙貝', '零食', '餅乾',
+        # 早餐與食材
+        '蛋餅', '茶葉蛋', '酸辣湯', '蔬菜', '水果', '蘋果', '香蕉', '鮮食促', '友善食光', '珍食',
+        # 服務費 (通常是餐廳或外送)
+        '服務費', '服務費用', '訂餐服務費'
+    ]
+    food_sellers = [
+        '星巴克', 'starbucks', '麥當勞', 'mcdonald', '爭鮮', '壽司郎', 'sushiro', '鬍子兄弟', '都城實業', 
+        '作燴餐飲', '丰呈馭食', '漫時', '富利餐飲', '必勝客', '肯德基', 'kfc', '摩斯', 'mos', '黛比澍', 
+        '百變全球', '龍角', '景美茶行', '拾汣茶屋', '先喝道', '約翰紅茶', '一青苑', '茶之魔手', '萬波', 
+        'comebuy', '珍煮丹', '甘蔗媽媽', '鳥人拉麵', '湯包', '餐館', '小吃', '食堂', '咖啡', '茶飲',
+        '超商', '便利商店', '全家', '統一超商', '萊爾富', 'ok超商', '美廉社'
+    ]
     if any(kw in desc for kw in food_kws) or any(kw in seller for kw in food_sellers):
         return '飲食'
         
-    # 2. 交通分類
-    trans_kws = ['高鐵', '台鐵', '火車', '乘車票', '悠遊卡', '捷運', '計程車', '加油', '中油', '台亞', '車票', '客運', 'uber', '車']
-    trans_sellers = ['高速鐵路', '台鐵', '捷運', '客運', '加油站', '中油', '台灣鐵路']
+    # 2. 交通分類 (Transportation)
+    trans_kws = [
+        '高鐵', '台鐵', '火車', '車票', '乘車票', '悠遊卡', '捷運', '客運', '公車', '計程車', 
+        'uber', 'yoxi', '汽油', '無鉛', '柴油', '加油', '充電', '車'
+    ]
+    trans_sellers = [
+        '高速鐵路', '台鐵', '捷運', '客運', '加油站', '中油', '台灣中油', '台亞', '全國加油站', 
+        '和泰聯網', '台灣鐵路'
+    ]
     if any(kw in desc for kw in trans_kws) or any(kw in seller for kw in trans_sellers):
         return '交通'
         
-    # 3. 娛樂分類
-    ent_kws = ['電影', '威秀', '影城', 'steam', '遊戲', '娛樂', 'cyberpunk', 'hades', 'netflix', 'spotify', 'ktv', '歌唱', '演唱會']
-    ent_sellers = ['威秀', '影城', 'steam', '國賓', '秀泰', '錢櫃', '好樂迪', 'spotify', 'netflix']
+    # 3. 娛樂分類 (Entertainment & Hobby)
+    ent_kws = [
+        '電影', '影城', '吉伊卡哇', 'chiikawa', '寶可夢', '卡牌', '玩具', '吊飾', '玩偶', 
+        '底片', '沖洗', '照片', '相片', '遊戲', 'steam', 'hades', 'cyberpunk', 'switch', 
+        'playstation', 'xbox', 'netflix', 'spotify', 'disney+', 'ktv', '歌唱', '演唱會', 
+        '展覽', '門票', '售票'
+    ]
+    ent_sellers = [
+        '威秀', '影城', '國賓', '秀泰', 'steam', 'spotify', 'netflix', '錢櫃', '好樂迪', 
+        '大創', 'daiso', '紫蘿蘭'
+    ]
     if any(kw in desc for kw in ent_kws) or any(kw in seller for kw in ent_sellers):
         return '娛樂'
         
-    # 4. 3C配件分類
-    electronics_kws = ['iphone', '快充線', '滑鼠', '鍵盤', 'type-c', 'hub', '轉接器', '行動電源', '手機', '電腦', '線材', '耳機', '螢幕', '隨身碟']
-    electronics_sellers = ['燦坤', '順發', 'apple', '小米', '光華商場', '三創']
+    # 4. 3C配件分類 (Electronics & Accessories)
+    electronics_kws = [
+        'iphone', 'ipad', 'macbook', '華碩', 'asus', '快充', '傳輸線', '充電線', '滑鼠', 
+        '鍵盤', 'type-c', 'hub', '轉接', '行動電源', '手機', '電腦', '相機', '耳機', '螢幕', 
+        '隨身碟', '記憶卡', '電池', '延長線', '插頭', '線材', '記憶體', '硬碟'
+    ]
+    electronics_sellers = ['燦坤', '順發', 'apple', '小米', '光華', '三創', '良興', '地標網通']
     if any(kw in desc for kw in electronics_kws) or any(kw in seller for kw in electronics_sellers):
         return '3C配件'
         
-    # 5. 服飾分類
-    cloth_kws = ['短t', '運動鞋', '皮夾', '衣服', '外套', '褲子', '鞋子', '洋裝', '襯衫', '包包', '皮帶']
-    cloth_sellers = ['新光三越', 'uniqlo', 'zara', '無印良品', 'sogo', '微風', '遠東百貨']
+    # 5. 服飾分類 (Clothing & Fashion)
+    cloth_kws = [
+        '短t', 't恤', '襯衫', '外套', '刷毛', '大衣', '洋裝', '褲子', '牛仔褲', '裙子', 
+        '鞋子', '運動鞋', '皮鞋', '皮夾', '包包', '背包', '皮帶', '眼鏡', '襪子', '衣'
+    ]
+    cloth_sellers = [
+        'uniqlo', 'zara', '無印良品', 'net', 'h&m', 'gap', 'adidas', 'nike', 'puma', 
+        '新光三越', 'sogo', '微風', '遠東', '三井不動產', '美麗華', 'outlet'
+    ]
     if any(kw in desc for kw in cloth_kws) or any(kw in seller for kw in cloth_sellers):
         return '服飾'
         
-    # 6. 醫療分類
-    med_kws = ['口罩', '維他命', '防曬乳', '洗面乳', '藥', '感冒', '診所', '藥水', '保健食品']
-    med_sellers = ['藥局', '診所', '醫院', '康是美', '屈臣氏', '大樹藥局']
+    # 6. 醫療分類 (Medical & Personal Care)
+    med_kws = [
+        '口罩', '維他命', '維生素', '益生菌', '防曬', '洗面', '藥', '感冒', '診所', '掛號費', 
+        '藥水', '保健食品', '衛生套', '避孕套', '杜蕾斯', 'durex', '岡本', 'okamoto', '滴劑', 
+        '眼藥水', '貼布', '棉花棒'
+    ]
+    med_sellers = [
+        '藥局', '診所', '醫院', '康是美', '屈臣氏', 'watsons', 'cosmed', '大樹藥局', '杏一', 
+        '佑全', '丁丁'
+    ]
     if any(kw in desc for kw in med_kws) or any(kw in seller for kw in med_sellers):
         return '醫療'
         
@@ -278,6 +330,18 @@ def parse_downloaded_csv(csv_file):
     df_csv['amount'] = df_csv['amount'].astype(str).str.replace(r'[$,]', '', regex=True)
     df_csv['amount'] = pd.to_numeric(df_csv['amount'], errors='coerce').fillna(0).astype(int)
     
+    # 建立強大安全的整數解析器以避免備註列轉換出錯
+    def to_int_safe(val, default=0):
+        if pd.isna(val) or not val:
+            return default
+        try:
+            clean_str = re.sub(r'[^\d\-.]', '', str(val))
+            if not clean_str:
+                return default
+            return int(float(clean_str))
+        except Exception:
+            return default
+            
     invoices = []
     
     # 按照發票號碼分組
@@ -291,14 +355,14 @@ def parse_downloaded_csv(csv_file):
         items_list = []
         if 'itemName' in group.columns:
             for i, (_, row) in enumerate(group.iterrows()):
-                qty = int(row.get('quantity', 1)) if 'quantity' in row and pd.notna(row['quantity']) else 1
+                qty = to_int_safe(row.get('quantity', 1), 1)
                 
                 # 優先使用單品金額 detailAmount，若無則依單價計，最後 fallback 至發票金額 amount
-                fallback_price = int(row.get('detailAmount', row['amount'])) if 'detailAmount' in row and pd.notna(row['detailAmount']) else int(row['amount'])
-                price = int(row.get('unitPrice', fallback_price)) if 'unitPrice' in row and pd.notna(row['unitPrice']) else fallback_price
+                fallback_price = to_int_safe(row.get('detailAmount', row['amount']), to_int_safe(row['amount']))
+                price = to_int_safe(row.get('unitPrice', fallback_price), fallback_price)
                 
                 # 優先使用單品金額 detailAmount，其次以單價乘數量計，最後 fallback 至 amount
-                item_amt = int(row.get('detailAmount', price * qty)) if 'detailAmount' in row and pd.notna(row['detailAmount']) else int(row.get('amount', price * qty))
+                item_amt = to_int_safe(row.get('detailAmount', price * qty), to_int_safe(row.get('amount', price * qty)))
                 
                 items_list.append({
                     "rowNum": str(i + 1),

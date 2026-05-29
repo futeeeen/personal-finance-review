@@ -52,7 +52,6 @@ def run_browser_automation():
         page = context.new_page()
         
         print("[爬蟲] 正在載入新版財政部電子發票整合服務平台登入頁面...")
-        # 直接進入新版消費者統一登入入口
         page.goto("https://www.einvoice.nat.gov.tw/accounts/login/mw")
         
         page.wait_for_timeout(3000)
@@ -118,12 +117,11 @@ def run_browser_automation():
         print("[爬蟲] 偵測到登入成功！機器人正在接管瀏覽器...")
         page.wait_for_timeout(3000) # 等待登入後首頁載入完成
         
-        # 2. 自動重定向跳轉至新版發票查詢頁面 (直接網頁跳轉，最快速且 100% 穩健！)
+        # 2. 自動重定向跳轉至新版發票查詢頁面
         # 新版電子發票平台發票查詢與捐贈路徑為 btc502w/search
         print("[爬蟲] 正在直接導航至『發票查詢及捐贈』頁面...")
         try:
             page.goto("https://www.einvoice.nat.gov.tw/portal/btc/mobile/btc502w/search", timeout=20000)
-            page.wait_for_timeout(3000) # 等待頁面載入
             print(f"[爬蟲] 導航成功，當前頁面: {page.url}")
         except Exception as e:
             print(f"[提示] 直接導航失敗，請在瀏覽器中手動點選『發票查詢及捐贈』選單: {e}")
@@ -132,50 +130,83 @@ def run_browser_automation():
             except Exception:
                 pass
             
-        page.wait_for_timeout(2000) # 等待查詢頁面穩定
-        
         # 3. 自動設定日期範圍並點選查詢
         print("[爬蟲] 正在設定查詢條件...")
         query_success = False
         try:
+            # 等待查詢表單動態渲染完成 (最長等待 10 秒)
+            print("[爬蟲] 正在等待查詢表單渲染完成...")
+            page.wait_for_selector("input", timeout=10000)
+            page.wait_for_timeout(1500) # 給予額外穩定時間
+
             # 移除所有輸入框的 readonly 屬性，確保 Playwright 能 programmatic 直接填入日期！
             page.evaluate("() => { document.querySelectorAll('input').forEach(el => el.removeAttribute('readonly')); }")
             page.wait_for_timeout(500)
 
-            # 搜尋日期起迄輸入框
-            date_selectors = [
-                "input[placeholder*='日期']", "input[placeholder*='起迄']", 
-                "input[class*='date']", "input[class*='range']",
-                "input[id*='date']", "input[name*='date']", "input[placeholder*='選擇']"
-            ]
+            # 自適應多重日期輸入框定位器：獲取頁面所有輸入框並進行屬性分析
+            inputs = page.locator("input")
+            date_inputs = []
+            for i in range(inputs.count()):
+                input_el = inputs.nth(i)
+                placeholder = str(input_el.get_attribute("placeholder") or "").lower()
+                name = str(input_el.get_attribute("name") or "").lower()
+                id_attr = str(input_el.get_attribute("id") or "").lower()
+                class_attr = str(input_el.get_attribute("class") or "").lower()
+                
+                # 若包含日期關鍵字，納入處理
+                if any(kw in placeholder or kw in name or kw in id_attr or kw in class_attr 
+                       for kw in ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄']):
+                    # 動態移除單一元素的唯讀屬性
+                    page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
+                    date_inputs.append(input_el)
+
+            start_date_str = "2026/01/01"
+            end_date_str = "2026/05/29"
             
-            date_input = None
-            for sel in date_selectors:
-                loc = page.locator(sel)
-                if loc.count() > 0 and loc.first.is_visible():
-                    date_input = loc.first
-                    break
-                    
-            if date_input:
+            # 情況 A：單一日期範圍輸入框 (如：2026/01/01 ~ 2026/05/29)
+            if len(date_inputs) == 1:
+                date_input = date_inputs[0]
                 date_input.click()
                 page.keyboard.press("Control+A")
                 page.keyboard.press("Backspace")
-                # 填入發票查詢的 6 個月時間區間 (西元格式，元件會自動對齊)
-                date_range_str = "2026/01/01 ~ 2026/05/29"
+                date_range_str = f"{start_date_str} ~ {end_date_str}"
                 date_input.fill(date_range_str)
-                print(f"[爬蟲] [OK] 已自動填入發票日期起迄: {date_range_str}")
+                print(f"[爬蟲] [OK] 已自動填入單一日期起迄欄位: {date_range_str}")
                 page.wait_for_timeout(500)
                 
-                # 點擊頁面標題以關閉可能彈出的日期選擇下拉選單
+                # 點擊頁面標題關閉彈出的月曆面板
+                try:
+                    page.locator("text=發票查詢及捐贈").first.click()
+                    page.wait_for_timeout(500)
+                except Exception:
+                    pass
+            # 情況 B：兩個獨立的起、迄輸入框 (如：[開始日期] [結束日期])
+            elif len(date_inputs) >= 2:
+                # 填入開始日期
+                date_inputs[0].click()
+                page.keyboard.press("Control+A")
+                page.keyboard.press("Backspace")
+                date_inputs[0].fill(start_date_str)
+                print(f"[爬蟲] [OK] 已自動填入開始日期欄位: {start_date_str}")
+                page.wait_for_timeout(500)
+                
+                # 填入結束日期
+                date_inputs[1].click()
+                page.keyboard.press("Control+A")
+                page.keyboard.press("Backspace")
+                date_inputs[1].fill(end_date_str)
+                print(f"[爬蟲] [OK] 已自動填入結束日期欄位: {end_date_str}")
+                page.wait_for_timeout(500)
+                
                 try:
                     page.locator("text=發票查詢及捐贈").first.click()
                     page.wait_for_timeout(500)
                 except Exception:
                     pass
             else:
-                print("[提示] 未能自動定位日期輸入框，將使用網頁預設值（當月）。")
+                print("[提示] 未能自動定位日期輸入框，將採用網頁預設值（當月）。")
                 
-            # 尋找並點擊查詢按鈕 (以獨立選擇器尋找，防止 Playwright 語法崩潰)
+            # 尋找並點擊查詢按鈕
             query_btn_selectors = [
                 "button:has-text('查詢')", "input[type='button'][value='查詢']", 
                 "input[type='submit'][value='查詢']", "button[id*='query']", 
@@ -195,19 +226,18 @@ def run_browser_automation():
             if query_btn:
                 query_btn.click()
                 print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
-                page.wait_for_timeout(6000) # 給予 6 秒完整載入發票清單與表單
+                page.wait_for_timeout(6000) # 給予 6 秒載入發票列表
                 query_success = True
             else:
-                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選藍色『查詢』按鈕。")
+                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選『查詢』。")
                 page.wait_for_timeout(3000)
         except Exception as e:
             print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")
             
-        # 4. 自動攔截並下載發票 CSV 檔案
+        # 4. 自動攔截並下載發票 CSV 檔案 (等待按鈕啟用，避免 disabled 點擊超時)
         print("[爬蟲] 正在尋找 CSV 下載按鈕...")
         download_success = False
         try:
-            # 獨立的選擇器列表，避免 comma-separated 混合選擇器的解析錯誤
             download_selectors = [
                 "text=下載明細CSV", "text=下載明細", "text=下載", "text=匯出",
                 "button:has-text('下載')", "button:has-text('匯出')", 
@@ -227,17 +257,29 @@ def run_browser_automation():
                     continue
             
             if download_btn:
-                print(f"[爬蟲] 偵測到下載按鈕！啟動自動下載攔截器...")
-                with page.expect_download(timeout=20000) as download_info:
-                    download_btn.click()
-                download = download_info.value
+                # 輪詢等待下載按鈕變成啟用狀態 (not disabled)，最多等待 20 秒 (解決後台資料庫加載延遲問題)
+                print("[爬蟲] 偵測到下載按鈕。正在等待大平台加載完成並啟用下載功能...")
+                btn_enabled = False
+                for _ in range(20):
+                    if not download_btn.is_disabled():
+                        btn_enabled = True
+                        break
+                    page.wait_for_timeout(1000)
                 
-                # 自動存檔至 data/invoices.csv
-                target_path = os.path.join("data", "invoices.csv")
-                download.save_as(target_path)
-                print(f"[成功] [OK] 發票明細 CSV 檔案已自動下載並儲存至: {target_path}")
-                download_success = True
-                page.wait_for_timeout(2000)
+                if btn_enabled:
+                    print("[爬蟲] [OK] 下載按鈕已啟用！啟動自動下載攔截器...")
+                    with page.expect_download(timeout=25000) as download_info:
+                        download_btn.click()
+                    download = download_info.value
+                    
+                    # 自動存檔至 data/invoices.csv
+                    target_path = os.path.join("data", "invoices.csv")
+                    download.save_as(target_path)
+                    print(f"[成功] [OK] 發票明細 CSV 檔案已自動下載並儲存至: {target_path}")
+                    download_success = True
+                    page.wait_for_timeout(2000)
+                else:
+                    print("[提示] 資料載入時間過長，下載按鈕仍處於禁用狀態。請手動點擊下載。")
             else:
                 print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載明細 CSV』或『匯出 CSV』...")
         except Exception as e:
@@ -247,7 +289,7 @@ def run_browser_automation():
             print("\n" + "="*70)
             print(" 👉 機器人自動化下載受阻，請手動在瀏覽器完成下載動作：")
             print("   1. 請手動在瀏覽器下載您的發票 CSV 明細檔。")
-            print("   2. 將下載的 CSV 檔案移至專案目錄的 `data/` 資料夾下。")
+            print("   2. 將下載的 CSV 檔案移至專案目錄 the `data/` 資料夾下。")
             print("="*70 + "\n")
             input(">>> 當您「手動下載好 CSV」並放入 `data/` 資料夾後，請回到此處按下 [Enter] 鍵繼續...")
             

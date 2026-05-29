@@ -47,7 +47,7 @@ def run_browser_automation():
             print("4. 執行 `python data_cleaner.py` 即可自動完成資料洗滌與更新儀表板！")
             return
             
-        # 強制指定一個標準的大螢幕桌面解析度 (1440x900)，避免觸發行動版網頁的底欄或隱藏選單
+        # 強制指定一個標準的大螢幕桌面解析度 (1440x900)
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
         
@@ -96,7 +96,7 @@ def run_browser_automation():
         print(" >>> 請在瀏覽器視窗中完成以下動作：")
         print("     1. 手動輸入「圖形驗證碼」。")
         print("     2. 點選「登入」按鈕。")
-        print(" 📢 [提示] 登入成功後，機器人將「自動接手」進行選單點擊與發票下載！")
+        print(" 📢 [提示] 登入成功後，機器人將「自動接手」進行網頁導航、日期輸入與下載！")
         print("*"*65 + "\n")
         
         # 1. 偵測登入成功 (等待 URL 重定向)
@@ -118,78 +118,62 @@ def run_browser_automation():
         print("[爬蟲] 偵測到登入成功！機器人正在接管瀏覽器...")
         page.wait_for_timeout(3000) # 等待登入後首頁載入完成
         
-        # 2. 自動點選『載具消費發票查詢』頁面 (直接網頁跳轉，避開行動版/選單點擊問題)
-        # 新版電子發票平台桌上型的發票查詢路徑為 btc501w
-        print("[爬蟲] 正在直接導航至『載具消費發票查詢』頁面...")
+        # 2. 自動重定向跳轉至新版發票查詢頁面 (直接網頁跳轉，最快速且 100% 穩健！)
+        # 新版電子發票平台發票查詢與捐贈路徑為 btc502w/search
+        print("[爬蟲] 正在直接導航至『發票查詢及捐贈』頁面...")
         try:
-            # 優先嘗試導航到桌面版查詢頁
-            page.goto("https://www.einvoice.nat.gov.tw/portal/btc/desktop/btc501w/main", timeout=15000)
-            page.wait_for_timeout(2000)
-            
-            # 若不在 btc501w 頁面，嘗試行動版查詢頁
-            if "btc501w" not in page.url:
-                page.goto("https://www.einvoice.nat.gov.tw/portal/btc/mobile/btc501w/main", timeout=15000)
-                page.wait_for_timeout(2000)
-                
+            page.goto("https://www.einvoice.nat.gov.tw/portal/btc/mobile/btc502w/search", timeout=20000)
+            page.wait_for_timeout(3000) # 等待頁面載入
             print(f"[爬蟲] 導航成功，當前頁面: {page.url}")
         except Exception as e:
-            print(f"[提示] 直接導航失敗，嘗試進行選單搜尋點擊: {e}")
+            print(f"[提示] 直接導航失敗，請在瀏覽器中手動點選『發票查詢及捐贈』選單: {e}")
             try:
-                page.locator("text=載具消費發票查詢").first.click()
+                page.locator("text=發票查詢及捐贈").first.click()
             except Exception:
                 pass
             
-        page.wait_for_timeout(2000) # 等待查詢頁面載入
+        page.wait_for_timeout(2000) # 等待查詢頁面穩定
         
         # 3. 自動設定日期範圍並點選查詢
         print("[爬蟲] 正在設定查詢條件...")
         query_success = False
         try:
-            start_date_str = "2026/01/01"
-            end_date_str = "2026/05/29"
-            
-            # 使用獨立 CSS 選擇器列表逐一嘗試，避免 comma-separated 混用 text 的解析錯誤
-            start_selectors = [
-                "input[name*='start']", "input[id*='start']", "input[name*='startDate']",
-                "input[placeholder*='開始']", "input[placeholder*='起']", "input[id*='startDate']"
+            # 移除所有輸入框的 readonly 屬性，確保 Playwright 能 programmatic 直接填入日期！
+            page.evaluate("() => { document.querySelectorAll('input').forEach(el => el.removeAttribute('readonly')); }")
+            page.wait_for_timeout(500)
+
+            # 搜尋日期起迄輸入框
+            date_selectors = [
+                "input[placeholder*='日期']", "input[placeholder*='起迄']", 
+                "input[class*='date']", "input[class*='range']",
+                "input[id*='date']", "input[name*='date']", "input[placeholder*='選擇']"
             ]
             
-            start_input = None
-            for sel in start_selectors:
+            date_input = None
+            for sel in date_selectors:
                 loc = page.locator(sel)
                 if loc.count() > 0 and loc.first.is_visible():
-                    start_input = loc.first
+                    date_input = loc.first
                     break
                     
-            if start_input:
-                start_input.click()
+            if date_input:
+                date_input.click()
                 page.keyboard.press("Control+A")
                 page.keyboard.press("Backspace")
-                start_input.fill(start_date_str)
-                print(f"[爬蟲] [OK] 已自動填入開始日期: {start_date_str}")
-            else:
-                print("[提示] 未能自動定位開始日期框，採用網頁預設值。")
+                # 填入發票查詢的 6 個月時間區間 (西元格式，元件會自動對齊)
+                date_range_str = "2026/01/01 ~ 2026/05/29"
+                date_input.fill(date_range_str)
+                print(f"[爬蟲] [OK] 已自動填入發票日期起迄: {date_range_str}")
+                page.wait_for_timeout(500)
                 
-            end_selectors = [
-                "input[name*='end']", "input[id*='end']", "input[name*='endDate']",
-                "input[placeholder*='結束']", "input[id*='endDate']"
-            ]
-            
-            end_input = None
-            for sel in end_selectors:
-                loc = page.locator(sel)
-                if loc.count() > 0 and loc.first.is_visible():
-                    end_input = loc.first
-                    break
-                    
-            if end_input:
-                end_input.click()
-                page.keyboard.press("Control+A")
-                page.keyboard.press("Backspace")
-                end_input.fill(end_date_str)
-                print(f"[爬蟲] [OK] 已自動填入結束日期: {end_date_str}")
+                # 點擊頁面標題以關閉可能彈出的日期選擇下拉選單
+                try:
+                    page.locator("text=發票查詢及捐贈").first.click()
+                    page.wait_for_timeout(500)
+                except Exception:
+                    pass
             else:
-                print("[提示] 未能自動定位結束日期框，採用網頁預設值。")
+                print("[提示] 未能自動定位日期輸入框，將使用網頁預設值（當月）。")
                 
             # 尋找並點擊查詢按鈕 (以獨立選擇器尋找，防止 Playwright 語法崩潰)
             query_btn_selectors = [
@@ -211,10 +195,10 @@ def run_browser_automation():
             if query_btn:
                 query_btn.click()
                 print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
-                page.wait_for_timeout(5000) # 給予 5 秒完整載入發票清單
+                page.wait_for_timeout(6000) # 給予 6 秒完整載入發票清單與表單
                 query_success = True
             else:
-                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選『查詢』按鈕。")
+                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選藍色『查詢』按鈕。")
                 page.wait_for_timeout(3000)
         except Exception as e:
             print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")

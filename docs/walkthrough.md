@@ -36,7 +36,7 @@ graph TD
 1. **[.gitignore](file:///c:/futen/Project/Personal%20finances%20review/.gitignore)**：Git 排除清單。已設定自動忽略 `config.json`（放置個人手機與密碼的地方）、`node_modules/` 與 Python 快取。確保您的敏感隱私不會外洩！
 2. **[config.example.json](file:///c:/futen/Project/Personal%20finances%20review/config.example.json)**：公開的設定檔範本，新增了 `phoneNo` (手機號碼) 與 `verificationCode` (載具驗證碼密碼)。
 3. **[config.json](file:///c:/futen/Project/Personal%20finances%20review/config.json)**：您本地專屬的設定檔，已加入預填欄位。預設 `useMock: true` 提供模擬體驗；當您要跑真實爬蟲時，請將 `useMock` 改為 `false` 並填入您的手機號碼與載具密碼。
-4. **[browser_crawler.py](file:///c:/futen/Project/Personal%20finances%20review/browser_crawler.py)**：【全新】Playwright 半自動爬蟲。會以 Headed 模式開啟 Chromium，自動預填手機號碼與密碼，暫停腳本讓您「輸入圖形驗證碼登入」並下載 CSV，一旦關閉後自動接手清洗數據！
+4. **[browser_crawler.py](file:///c:/futen/Project/Personal%20finances%20review/browser_crawler.py)**：【全新優化】Playwright 半自動爬蟲。會以 Headed 模式開啟 Chromium，自動預填手機號碼與密碼，暫停腳本讓您「輸入圖形驗證碼登入」並下載 CSV，已新增極致可靠的 **JS / DOM 點擊與勾選雙重防護機制**，徹底解決「全選」勾選框與「下載明細 CSV」按鈕因 CSS 仿製或 Label 覆蓋導致的 pointer-interception 指標攔截超時問題，關閉後自動接手清洗數據！
 5. **[data_cleaner.py](file:///c:/futen/Project/Personal%20finances%20review/data_cleaner.py)**：【全新優化】Pandas 資料清洗模組：
    - **多數據源處理**：優先偵測 `data/` 資料夾下的任何 CSV 檔案。如果沒有 CSV，會自動降級到 API / Mock 模擬數據生成，保證開箱即用！
    - **亂碼解決方案**：自動嘗試多種編碼（UTF-8-SIG、BIG5、CP950、GBK），解決 Excel 直接開啟 Big5 CSV 產生的亂碼問題。

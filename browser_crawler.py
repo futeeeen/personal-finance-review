@@ -223,7 +223,13 @@ def run_browser_automation():
                     continue
                     
             if query_btn:
-                query_btn.click()
+                try:
+                    query_btn.click(timeout=3000)
+                except Exception:
+                    try:
+                        query_btn.click(force=True, timeout=2000)
+                    except Exception:
+                        query_btn.evaluate("el => el.click()")
                 print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
                 query_success = True
             else:
@@ -235,14 +241,13 @@ def run_browser_automation():
         # 4. 等待明細發票列表與勾選框載入 (解決新版平台 /detail 頁面跳轉問題)
         print("[爬蟲] 正在等待查詢發票結果列表載入...")
         try:
-            # 最長等待 15 秒，直到畫面上渲染出勾選方塊 (這代表查詢成功且發票清單已加載)
             page.wait_for_selector("input[type='checkbox']", timeout=15000)
             page.wait_for_timeout(1500) # 給予 1.5 秒讓表格穩定
             print(f"[爬蟲] [OK] 發票清單加載成功，當前網址: {page.url}")
         except Exception as e:
             print(f"[提示] 等待發票明細表載入超時，將嘗試直接尋找方塊: {e}")
 
-        # 5. 自動勾選所有發票項目 (核心發現：大平台規定必須「勾選」發票才能啟用下載按鈕！)
+        # 5. 自動勾選所有發票項目 (使用 force=True 強制勾選，避開 Label / Div 攔截指針問題)
         print("[爬蟲] 正在自動勾選所有發票項目以啟用下載按鈕...")
         try:
             checkboxes = page.locator("input[type='checkbox']")
@@ -250,19 +255,33 @@ def run_browser_automation():
             print(f"[爬蟲] 偵測到 {box_count} 個勾選方塊。")
             
             if box_count > 0:
-                # 優先點擊第一個勾選框 (大平台通常第一個是 Table Header 中的「全選」按鈕)
+                # 優先點擊第一個勾選框 (大平台通常第一個是 Table Header 中的「全選」按鈕，優先使用 JS .click() 避免 pointer-interception)
                 first_box = checkboxes.first
                 if not first_box.is_checked():
-                    first_box.check()
-                    print("[爬蟲] [OK] 已自動點擊『全選』勾選框。")
+                    try:
+                        first_box.evaluate("el => el.click()")
+                        print("[爬蟲] [OK] 已自動點擊『全選』勾選框 (JS)。")
+                    except Exception as je:
+                        print(f"[提示] JS 點擊全選受阻 ({je})，嘗試 Playwright 強制勾選...")
+                        try:
+                            first_box.check(force=True, timeout=5000)
+                            print("[爬蟲] [OK] 已自動點擊『全選』勾選框 (Playwright 強制)。")
+                        except Exception as fe:
+                            print(f"[警告] 強制勾選失敗: {fe}")
                     page.wait_for_timeout(1000)
                 
-                # 安全保險：二次檢查，若仍有未勾選的個別項目，手動將其全部勾選
+                # 安全保險：二次檢查，若仍有未勾選的個別項目，全部強制勾選
                 for i in range(box_count):
                     box = checkboxes.nth(i)
                     if not box.is_checked():
-                        box.check()
-                print("[爬蟲] [OK] 所有發票項目已確保皆已勾選。")
+                        try:
+                            box.evaluate("el => el.click()")
+                        except Exception:
+                            try:
+                                box.check(force=True, timeout=2000)
+                            except Exception:
+                                pass
+                print("[爬蟲] [OK] 所有發票項目已確保皆已完成勾選。")
             else:
                 print("[提示] 找不到任何勾選框，可能該區間內沒有發票數據。")
         except Exception as e:
@@ -303,7 +322,11 @@ def run_browser_automation():
                 if btn_enabled:
                     print("[爬蟲] [OK] 下載按鈕已啟用！啟動自動下載攔截器...")
                     with page.expect_download(timeout=25000) as download_info:
-                        download_btn.click()
+                        try:
+                            download_btn.click(force=True, timeout=5000)
+                        except Exception as e:
+                            print(f"[提示] 下載按鈕點擊受阻 ({e})，正在嘗試 JS 強制點擊下載...")
+                            download_btn.evaluate("el => el.click()")
                     download = download_info.value
                     
                     # 自動存檔至 data/invoices.csv
@@ -313,7 +336,7 @@ def run_browser_automation():
                     download_success = True
                     page.wait_for_timeout(2000)
                 else:
-                    print("[提示] 下載按鈕仍為禁用狀態，請您在瀏覽器中手動點擊『下載CSV檔』。")
+                    print("[提示] 資料載入時間過長，下載按鈕仍處於禁用狀態。請手動點擊下載。")
             else:
                 print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載CSV檔』...")
         except Exception as e:

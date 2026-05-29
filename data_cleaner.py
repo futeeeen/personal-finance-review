@@ -140,7 +140,58 @@ def parse_downloaded_csv(csv_file):
     if header_index == -1:
         header_index = 0
         
-    csv_data = "".join(content_lines[header_index:])
+    # 重新處理 CSV 的每一行，修復異常欄位（如未經引號包裹卻包含逗號的地址欄位）並濾除雜訊
+    import csv
+    import io
+    
+    cleaned_rows = []
+    header_line = content_lines[header_index].strip()
+    
+    try:
+        header_parts = next(csv.reader([header_line]))
+    except Exception:
+        header_parts = [p.strip() for p in header_line.split(',')]
+        
+    expected_cols = 14
+    if len(header_parts) != 14:
+        expected_cols = len(header_parts)
+        
+    output_stream = io.StringIO()
+    csv_writer = csv.writer(output_stream, lineterminator='\n')
+    csv_writer.writerow(header_parts)
+    
+    for idx, line in enumerate(content_lines[header_index + 1:]):
+        l_str = line.strip()
+        if not l_str:
+            continue
+            
+        # 排除說明與頁尾性質的尾部註解
+        if any(kw in l_str for kw in ['捐贈或作廢之發票', '注意：本功能所下載', '字軌號碼均會隱末']):
+            continue
+            
+        try:
+            row_reader = csv.reader([l_str])
+            parts = next(row_reader)
+        except Exception:
+            parts = [p.strip() for p in l_str.split(',')]
+            
+        if len(parts) == expected_cols:
+            csv_writer.writerow(parts)
+        elif len(parts) > expected_cols and expected_cols == 14:
+            # 解決台灣發票地址中含有未經雙引號包裹的逗號導致的分欄錯誤 (例如 賣方地址 在索引 8)
+            first_8 = parts[0:8]
+            last_5 = parts[-5:]
+            middle_address = ",".join(parts[8 : -5])
+            csv_writer.writerow(first_8 + [middle_address] + last_5)
+        else:
+            # 進行補齊或截斷處理
+            if len(parts) < expected_cols:
+                parts += [""] * (expected_cols - len(parts))
+            elif len(parts) > expected_cols:
+                parts = parts[:expected_cols]
+            csv_writer.writerow(parts)
+            
+    csv_data = output_stream.getvalue()
     
     try:
         df_csv = pd.read_csv(StringIO(csv_data))
@@ -151,37 +202,56 @@ def parse_downloaded_csv(csv_file):
         
     # 欄位模糊匹配對應字典 (相容各種平台、APP 與官方格式)
     column_mapping = {
+        # 1. 官方明細 CSV 標準欄位
         '發票日期': 'invDate',
-        '日期': 'invDate',
         '發票號碼': 'invNum',
-        '發票': 'invNum',
-        '消費時間': 'invTime',
-        '時間': 'invTime',
-        '交易時間': 'invTime',
-        '賣方名稱': 'sellerName',
-        '店家名稱': 'sellerName',
-        '店家': 'sellerName',
-        '賣方統編': 'sellerBan',
-        '金額': 'amount',
-        '消費金額': 'amount',
-        '小計': 'amount',
+        '發票金額': 'amount',
         '發票狀態': 'invStatus',
-        '狀態': 'invStatus',
-        '品項名稱': 'itemName',
-        '品項': 'itemName',
+        '賣方統一編號': 'sellerBan',
+        '賣方名稱': 'sellerName',
+        '賣方地址': 'sellerAddress',
+        '買方統編': 'buyerBan',
+        '消費明細_數量': 'quantity',
+        '消費明細_單價': 'unitPrice',
+        '消費明細_金額': 'detailAmount',
+        '消費明細_品名': 'itemName',
+        
+        # 2. 其他平台/自訂格式之精確備用對齊 (避免短字串包含造成衝突碰撞)
+        '交易日期': 'invDate',
+        '店家名稱': 'sellerName',
+        '商戶名稱': 'sellerName',
         '商品名稱': 'itemName',
+        '品項名稱': 'itemName',
+        '消費時間': 'invTime',
+        '交易時間': 'invTime',
+        '統一編號': 'sellerBan',
+        '賣方統編': 'sellerBan',
+        '買方統一編號': 'buyerBan',
+        
+        # 3. 最末級單字備用 (長度由長到短匹配)
+        '日期': 'invDate',
+        '時間': 'invTime',
+        '店家': 'sellerName',
         '商品': 'itemName',
-        '明細': 'itemName',
+        '品項': 'itemName',
         '數量': 'quantity',
-        '單價': 'unitPrice'
+        '單價': 'unitPrice',
+        '金額': 'amount',
+        '小計': 'amount',
+        '狀態': 'invStatus',
     }
     
     # 清理欄位空格並重新映射名稱
     df_csv = df_csv.rename(columns=lambda x: str(x).strip() if pd.notna(x) else x)
+    
+    # 由長到短排列鍵值，防止 '發票' 誤匹配 '發票號碼'、'金額' 誤匹配 '消費明細_金額' 等
+    sorted_mapping = sorted(column_mapping.items(), key=lambda x: len(x[0]), reverse=True)
+    
     rename_dict = {}
     for col in df_csv.columns:
-        for key, val in column_mapping.items():
-            if key in str(col):
+        col_str = str(col).strip()
+        for key, val in sorted_mapping:
+            if key in col_str:
                 rename_dict[col] = val
                 break
                 
@@ -222,13 +292,20 @@ def parse_downloaded_csv(csv_file):
         if 'itemName' in group.columns:
             for i, (_, row) in enumerate(group.iterrows()):
                 qty = int(row.get('quantity', 1)) if 'quantity' in row and pd.notna(row['quantity']) else 1
-                price = int(row.get('unitPrice', row['amount'])) if 'unitPrice' in row and pd.notna(row['unitPrice']) else int(row['amount'])
+                
+                # 優先使用單品金額 detailAmount，若無則依單價計，最後 fallback 至發票金額 amount
+                fallback_price = int(row.get('detailAmount', row['amount'])) if 'detailAmount' in row and pd.notna(row['detailAmount']) else int(row['amount'])
+                price = int(row.get('unitPrice', fallback_price)) if 'unitPrice' in row and pd.notna(row['unitPrice']) else fallback_price
+                
+                # 優先使用單品金額 detailAmount，其次以單價乘數量計，最後 fallback 至 amount
+                item_amt = int(row.get('detailAmount', price * qty)) if 'detailAmount' in row and pd.notna(row['detailAmount']) else int(row.get('amount', price * qty))
+                
                 items_list.append({
                     "rowNum": str(i + 1),
                     "description": str(row['itemName']),
                     "quantity": str(qty),
                     "unitPrice": str(price),
-                    "amount": int(row.get('amount', price * qty))
+                    "amount": item_amt
                 })
         else:
             # 若無品項資訊，依店家名稱匹配預設商品名

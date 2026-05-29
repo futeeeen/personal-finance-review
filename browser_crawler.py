@@ -12,6 +12,23 @@ def load_config():
     return {}
 
 def run_browser_automation():
+    import sys
+    from datetime import datetime, timedelta
+    
+    # 預設起迄日期：結束日期為今天，開始日期為 180 天前（6 個月，大平台單次查詢的極限，保證撈取最大量的歷史資料！）
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=180)
+    
+    start_date_str = start_date.strftime("%Y/%m/%d")
+    end_date_str = end_date.strftime("%Y/%m/%d")
+    
+    # 支援以命令列參數傳入 --start YYYY/MM/DD --end YYYY/MM/DD
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '--start' and i + 1 < len(sys.argv):
+            start_date_str = sys.argv[i+1].replace('-', '/')
+        elif sys.argv[i] == '--end' and i + 1 < len(sys.argv):
+            end_date_str = sys.argv[i+1].replace('-', '/')
+            
     config = load_config()
     phone_no = config.get("phoneNo", "")
     verification_code = config.get("verificationCode", "")
@@ -159,8 +176,7 @@ def run_browser_automation():
                     page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
                     date_inputs.append(input_el)
 
-            start_date_str = "2026/01/01"
-            end_date_str = "2026/05/29"
+            # 已使用由命令列參數傳入的 start_date_str 與 end_date_str
             
             # 情況 A：單一日期範圍輸入框 (如：2026/01/01 ~ 2026/05/29)
             if len(date_inputs) == 1:
@@ -344,11 +360,34 @@ def run_browser_automation():
             
         if not download_success:
             print("\n" + "="*70)
-            print(" 👉 機器人自動化下載受阻，請手動在瀏覽器完成下載動作：")
-            print("   1. 請手動在瀏覽器下載您的發票 CSV 明細檔。")
-            print("   2. 將下載的 CSV 檔案移至專案目錄的 `data/` 資料夾下。")
+            print(" 👉 機器人自動化下載受阻，請在開啟的瀏覽器視窗中手動操作：")
+            print("   1. 請手動在瀏覽器選取全選，並點選「下載明細CSV」或「匯出」。")
+            print("   (系統正在自動監控 `data/` 目錄，一旦偵測到下載檔案將自動接續執行！)")
             print("="*70 + "\n")
-            input(">>> 當您「手動下載好 CSV」並放入 `data/` 資料夾後，請回到此處按下 [Enter] 鍵繼續...")
+            
+            import sys
+            # 檢查是否為非互動式終端 (比如透過 Vite DevServer 後台啟動)
+            is_interactive = sys.stdin.isatty()
+            
+            target_path = os.path.join("data", "invoices.csv")
+            manual_downloaded = False
+            
+            # 不論是否互動，皆先啟動 3 分鐘的目錄輪詢自動監控，這對使用者而言體驗最好
+            print("[提示] 機器人正在監控 `data/invoices.csv` 檔案生成...")
+            for _ in range(90): # 90 * 2 秒 = 180 秒 (3 分鐘)
+                if os.path.exists(target_path) and os.path.getsize(target_path) > 100:
+                    time.sleep(1) # 等待寫入穩定
+                    print("[成功] [OK] 偵測到發票明細 CSV 檔案，機器人即將關閉瀏覽器並接手清洗！")
+                    manual_downloaded = True
+                    download_success = True
+                    break
+                time.sleep(2)
+                
+            if not manual_downloaded and is_interactive:
+                # 若為互動式終端且監控超時，才降級至 input() 阻塞等待
+                input(">>> 監控超時。當您手動下載好 CSV 並放入 data/ 後，請回到此處按下 [Enter] 鍵繼續...")
+                if os.path.exists(target_path):
+                    download_success = True
             
         print("\n[爬蟲] 流程完成！正在關閉瀏覽器...")
         context.close()
@@ -359,7 +398,7 @@ def run_browser_automation():
     
     # 呼叫資料清洗模組
     import data_cleaner
-    success = data_cleaner.clean_and_process_invoices()
+    success = data_cleaner.clean_and_process_invoices(start_date=start_date_str, end_date=end_date_str)
     if success:
         print("\n" + "="*70)
         print(" *** 恭喜！發票資料清洗成功，財務分析儀表板已更新！ ***")

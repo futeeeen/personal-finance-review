@@ -613,6 +613,8 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
             "totalRefundCount": total_refund_count,
             "voidedCount": voided_invoices_count,
             "voidedAmount": voided_invoices_amount,
+            "minDate": df_active['date'].min().strftime('%Y-%m-%d') if not df_active.empty else "",
+            "maxDate": df_active['date'].max().strftime('%Y-%m-%d') if not df_active.empty else "",
             "lastUpdated": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         },
         "trends": {

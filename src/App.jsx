@@ -71,6 +71,33 @@ function App() {
   // 展開的發票號碼集合 (Accordion)
   const [expandedInvoices, setExpandedInvoices] = useState({});
 
+  // 爬蟲同步狀態與日期設定
+  const [crawlerLoading, setCrawlerLoading] = useState(false);
+  const [crawlerError, setCrawlerError] = useState(null);
+  const [crawlerSuccess, setCrawlerSuccess] = useState(false);
+  
+  // 獲取過去幾個月前的年月日字串 (格式 YYYY-MM-DD)
+  const getPastDateStr = (monthsAgo) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - monthsAgo);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  
+  const getTodayStr = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  
+  // 預設日期區間設為過去六個月（這樣可以載入更多以前的歷史資料！）
+  const [startDate, setStartDate] = useState(getPastDateStr(6));
+  const [endDate, setEndDate] = useState(getTodayStr());
+
   useEffect(() => {
     fetchInvoiceData();
   }, []);
@@ -82,10 +109,15 @@ function App() {
       // 讀取 Python data_cleaner 產出的靜態 JSON 數據
       const response = await fetch('/data/invoice_data.json');
       if (!response.ok) {
-        throw new Error('找不到發票數據檔案。請確保已在終端機中執行過 `python data_cleaner.py`！');
+        throw new Error('找不到發票數據檔案。請確保已執行過發票下載或同步！');
       }
       const jsonData = await response.json();
       setData(jsonData);
+      
+      // 動態更新爬蟲起迄預設日期，以「接續抓取未來發生的新發票」為主要目標
+      if (jsonData.summary && jsonData.summary.maxDate) {
+        setStartDate(jsonData.summary.maxDate);
+      }
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -93,6 +125,116 @@ function App() {
       setLoading(false);
     }
   };
+
+  const handleRunCrawler = async () => {
+    setCrawlerLoading(true);
+    setCrawlerError(null);
+    setCrawlerSuccess(false);
+    
+    try {
+      const startFormatted = startDate.replace(/-/g, '/');
+      const endFormatted = endDate.replace(/-/g, '/');
+      
+      const response = await fetch(`/api/run-crawler?start=${startFormatted}&end=${endFormatted}`);
+      if (!response.ok) {
+        throw new Error('同步請求失敗，請確認 Vite Dev Server 是否正常運行！');
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        setCrawlerSuccess(true);
+        // 成功後重新加載數據
+        await fetchInvoiceData();
+      } else {
+        throw new Error(result.stderr || '自動化更新失敗。可能原因：您手動關閉了瀏覽器、登入失敗或下載超時。');
+      }
+    } catch (err) {
+      console.error(err);
+      setCrawlerError(err.message);
+    } finally {
+      setCrawlerLoading(false);
+    }
+  };
+
+  const renderCrawlerLoadingOverlay = () => (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(15, 23, 42, 0.85)',
+      backdropFilter: 'blur(8px)',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem',
+      color: '#fff'
+    }}>
+      <div className="glass-card" style={{
+        maxWidth: '500px',
+        width: '100%',
+        padding: '2rem',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '1.5rem',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div className="kpi-icon-container blue" style={{ width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <RefreshCw size={32} className="spin" />
+        </div>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>機器人正在自動同步發票...</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>查詢起迄：{startDate} ~ {endDate}</p>
+        </div>
+        
+        <div style={{
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: '0.75rem',
+          padding: '1rem',
+          textAlign: 'left',
+          fontSize: '0.85rem',
+          color: '#d1d5db',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          width: '100%'
+        }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>1.</span>
+            <span>已自動開啟財政部大平台的登入網頁。</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>2.</span>
+            <span>您的手機號碼與驗證碼已為您預填完成（若已在設定檔中填寫）。</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>3.</span>
+            <span style={{ color: '#fca5a5', fontWeight: 600 }}>請在開啟的瀏覽器視窗中，手動輸入「圖形驗證碼」並點擊「登入」！</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>4.</span>
+            <span>登入後，機器人將自動設定日期並勾選清單，自動觸發明細 CSV 下載。</span>
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>5.</span>
+            <span>下載成功後將自動關閉瀏覽器，呼叫 Pandas 進行資料清洗，完成後此網頁將自動更新！</span>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', alignItems: 'center' }}>
+          <Info size={14} />
+          <span>請勿關閉此控制台。查詢歷史發票可能需要 10~30 秒。</span>
+        </div>
+      </div>
+    </div>
+  );
 
   const toggleInvoiceExpand = (invNum) => {
     setExpandedInvoices(prev => ({
@@ -119,15 +261,94 @@ function App() {
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem', lineHeight: '1.6' }}>
           {error || '未偵測到本地 JSON 數據。請先在專案目錄下執行 Python 腳本產生發票檔案！'}
         </p>
-        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '2rem', textAlign: 'left' }}>
-          <code style={{ color: '#a5b4fc', fontSize: '0.85rem', display: 'block' }}>
-            # 解決步驟：<br />
-            1. 檢查 config.json 設定檔中的金鑰或 useMock 是否為 true<br />
-            2. 在終端機執行命令：python data_cleaner.py<br />
-            3. 重新整理此瀏覽器畫面
-          </code>
+        
+        {/* 在錯誤頁面提供一鍵同步按鈕，免開終端機 */}
+        <div className="glass-card" style={{
+          padding: '1.5rem',
+          borderRadius: '15px',
+          border: '1px solid var(--border-color)',
+          background: 'rgba(255,255,255,0.02)',
+          marginBottom: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+          width: '100%'
+        }}>
+          <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600 }}>您可以直接使用「一鍵同步雲端發票」功能來建立資料庫：</h4>
+          
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>從</span>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  borderRadius: '0.5rem',
+                  padding: '0.35rem 0.5rem',
+                  fontSize: '0.75rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>到</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  borderRadius: '0.5rem',
+                  padding: '0.35rem 0.5rem',
+                  fontSize: '0.75rem',
+                  outline: 'none'
+                }}
+              />
+            </div>
+          </div>
+          
+          <button 
+            onClick={handleRunCrawler}
+            disabled={crawlerLoading}
+            style={{
+              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+              border: 'none',
+              color: '#fff',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '0.75rem',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: crawlerLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              transition: 'all 0.2s ease',
+              marginTop: '0.5rem'
+            }}
+          >
+            <RefreshCw size={16} className={crawlerLoading ? 'spin' : ''} />
+            {crawlerLoading ? '正在同步雲端發票...' : '一鍵同步雲端發票'}
+          </button>
         </div>
-        <button onClick={fetchInvoiceData} className="chart-btn active" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px' }}>
+        
+        {/* 全螢幕載入遮罩 */}
+        {crawlerLoading && renderCrawlerLoadingOverlay()}
+        
+        {crawlerError && (
+          <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '-1.5rem', marginBottom: '1.5rem' }}>
+            ✕ 同步失敗：{crawlerError}
+          </p>
+        )}
+        
+        <button onClick={fetchInvoiceData} className="chart-btn active" style={{ padding: '0.6rem 1.5rem', borderRadius: '10px', background: 'none', border: '1px solid var(--border-color)' }}>
           重新整理試試看
         </button>
       </div>
@@ -185,17 +406,83 @@ function App() {
             財政部電子發票大數據儀表板
           </h1>
           <p className="dashboard-subtitle">
-            基於 Python Pandas 清洗核心 • 反映離線本地發票庫分析
+            基於 Python Pandas 清洗核心 • 本地發票庫區間：{summary.minDate ? `${summary.minDate.replace(/-/g, '/')} ~ ${summary.maxDate.replace(/-/g, '/')}` : '無資料'}
           </p>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-          <div className="update-badge">
-            <RefreshCw size={14} className="spin-hover" />
-            資料庫更新時間：{summary.lastUpdated}
+        {/* 新增：發票同步爬蟲控制台 */}
+        <div className="glass-card crawler-panel" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1rem', 
+          padding: '0.6rem 1.2rem', 
+          borderRadius: '12px',
+          border: '1px solid var(--border-color)',
+          background: 'rgba(255,255,255,0.02)'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              資料庫更新時間：{summary.lastUpdated}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>從</span>
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    padding: '0.25rem 0.4rem',
+                    fontSize: '0.7rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>到</span>
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => setEndDate(e.target.value)}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                    borderRadius: '6px',
+                    padding: '0.25rem 0.4rem',
+                    fontSize: '0.7rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            想要更新？在終端機執行 <code style={{ color: '#a5b4fc' }}>python data_cleaner.py</code>
-          </span>
+          
+          <button 
+            onClick={handleRunCrawler}
+            disabled={crawlerLoading}
+            style={{
+              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+              border: 'none',
+              color: '#fff',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: crawlerLoading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <RefreshCw size={13} className={crawlerLoading ? 'spin' : ''} />
+            {crawlerLoading ? '正在同步...' : '同步雲端發票'}
+          </button>
         </div>
       </div>
 

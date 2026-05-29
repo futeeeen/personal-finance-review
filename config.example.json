@@ -3,5 +3,7 @@
   "apiKey": "YOUR_MOF_API_KEY",
   "cardNo": "/AB12345",
   "cardEncrypt": "YOUR_CARRIER_PASSWORD",
+  "phoneNo": "0912345678",
+  "verificationCode": "YOUR_CARRIER_PASSWORD",
   "useMock": true
 }

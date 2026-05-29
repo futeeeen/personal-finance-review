@@ -1,101 +1,101 @@
 {
   "summary": {
-    "totalSpend": 45781,
+    "totalSpend": 16818,
     "totalInvoices": 91,
-    "averageInvoiceSpend": 503,
-    "totalRefundAmount": -3640,
-    "totalRefundCount": 3,
+    "averageInvoiceSpend": 184,
+    "totalRefundAmount": -144,
+    "totalRefundCount": 1,
     "voidedCount": 4,
-    "voidedAmount": 1295,
-    "lastUpdated": "2026-05-29 12:55:34"
+    "voidedAmount": 450,
+    "lastUpdated": "2026-05-29 13:13:43"
   },
   "trends": {
     "monthly": [
       {
         "month": "2026-01",
-        "amount": 8595,
+        "amount": 3408,
         "count": 21
       },
       {
         "month": "2026-02",
-        "amount": 11774,
+        "amount": 3009,
         "count": 14
       },
       {
         "month": "2026-03",
-        "amount": 8964,
+        "amount": 3286,
         "count": 20
       },
       {
         "month": "2026-04",
-        "amount": 5520,
+        "amount": 3503,
         "count": 18
       },
       {
         "month": "2026-05",
-        "amount": 10928,
+        "amount": 3612,
         "count": 18
       }
     ],
     "weekly": [
       {
         "week_label": "第 11 週",
-        "amount": 1208,
+        "amount": 266,
         "count": 4
       },
       {
         "week_label": "第 12 週",
-        "amount": 2455,
+        "amount": 853,
         "count": 6
       },
       {
         "week_label": "第 13 週",
-        "amount": 2305,
+        "amount": 537,
         "count": 3
       },
       {
         "week_label": "第 14 週",
-        "amount": -1190,
+        "amount": 669,
         "count": 3
       },
       {
         "week_label": "第 15 週",
-        "amount": 2689,
+        "amount": 524,
         "count": 3
       },
       {
         "week_label": "第 16 週",
-        "amount": 2363,
+        "amount": 1344,
         "count": 6
       },
       {
         "week_label": "第 17 週",
-        "amount": 1019,
+        "amount": 945,
         "count": 5
       },
       {
         "week_label": "第 18 週",
-        "amount": 2059,
+        "amount": 1265,
         "count": 4
       },
       {
         "week_label": "第 19 週",
-        "amount": 1690,
+        "amount": 731,
         "count": 4
       },
       {
         "week_label": "第 20 週",
-        "amount": 1023,
+        "amount": 552,
         "count": 2
       },
       {
         "week_label": "第 21 週",
-        "amount": 6195,
+        "amount": 1142,
         "count": 9
       },
       {
         "week_label": "第 22 週",
-        "amount": 720,
+        "amount": 148,
         "count": 1
       }
     ]
@@ -103,106 +103,70 @@
   "categories": [
     {
       "category": "飲食",
-      "amount": 10817,
-      "count": 41,
-      "percentage": 21.9
-    },
-    {
-      "category": "服飾",
-      "amount": 9397,
-      "count": 7,
-      "percentage": 19.0
-    },
-    {
-      "category": "娛樂",
-      "amount": 9033,
-      "count": 7,
-      "percentage": 18.3
-    },
-    {
-      "category": "醫療",
-      "amount": 8670,
-      "count": 13,
-      "percentage": 17.5
-    },
-    {
-      "category": "3C配件",
-      "amount": 7799,
-      "count": 11,
-      "percentage": 15.8
-    },
-    {
-      "category": "其它",
-      "amount": 2105,
-      "count": 3,
-      "percentage": 4.3
-    },
-    {
-      "category": "交通",
-      "amount": 1600,
-      "count": 8,
-      "percentage": 3.2
+      "amount": 16962,
+      "count": 90,
+      "percentage": 100.0
     }
   ],
   "topSellers": [
     {
       "sellerName": "新光三越信義A11",
       "sellerShort": "新光三越信義A11",
-      "amount": 9160,
+      "amount": 1666,
       "count": 7
-    },
-    {
-      "sellerName": "Steam 數位娛樂",
-      "sellerShort": "Steam 數位娛樂",
-      "amount": 9033,
-      "count": 7
-    },
-    {
-      "sellerName": "燦坤3C南京東路店",
-      "sellerShort": "燦坤3C",
-      "amount": 6520,
-      "count": 8
     },
     {
       "sellerName": "康是美大安店",
       "sellerShort": "康是美",
-      "amount": 5500,
+      "amount": 1650,
       "count": 9
-    },
-    {
-      "sellerName": "屈臣氏南京店",
-      "sellerShort": "屈臣氏",
-      "amount": 3170,
-      "count": 4
-    },
-    {
-      "sellerName": "家樂福桂林店",
-      "sellerShort": "家樂福",
-      "amount": 2673,
-      "count": 3
-    },
-    {
-      "sellerName": "蝦皮購物-樂購蝦皮",
-      "sellerShort": "蝦皮購物-樂購蝦皮",
-      "amount": 1876,
-      "count": 6
-    },
-    {
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerShort": "全家便利商店",
-      "amount": 1702,
-      "count": 8
     },
     {
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerShort": "爭鮮迴轉壽司",
-      "amount": 1440,
+      "amount": 1511,
       "count": 12
+    },
+    {
+      "sellerName": "麥當勞台北重慶店",
+      "sellerShort": "麥當勞",
+      "amount": 1420,
+      "count": 4
+    },
+    {
+      "sellerName": "星巴克咖啡台北南京店",
+      "sellerShort": "星巴克咖啡",
+      "amount": 1396,
+      "count": 4
+    },
+    {
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerShort": "全家便利商店",
+      "amount": 1349,
+      "count": 8
+    },
+    {
+      "sellerName": "威秀影城信義店",
+      "sellerShort": "威秀影城信義店",
+      "amount": 1051,
+      "count": 5
+    },
+    {
+      "sellerName": "蝦皮購物-樂購蝦皮",
+      "sellerShort": "蝦皮購物-樂購蝦皮",
+      "amount": 1049,
+      "count": 6
+    },
+    {
+      "sellerName": "屈臣氏南京店",
+      "sellerShort": "屈臣氏",
+      "amount": 913,
+      "count": 4
     },
     {
       "sellerName": "台鐵便當台北車站店",
       "sellerShort": "台鐵便當",
-      "amount": 1140,
+      "amount": 895,
       "count": 5
     }
   ],
@@ -210,97 +174,97 @@
     {
       "weekday": "週一",
       "period": "早餐 (06-11)",
-      "amount": 476,
+      "amount": 478,
       "count": 2
     },
     {
       "weekday": "週一",
       "period": "午餐 (11-14)",
-      "amount": 979,
+      "amount": 735,
       "count": 2
     },
     {
       "weekday": "週一",
       "period": "下午茶 (14-17)",
-      "amount": 1083,
+      "amount": 335,
       "count": 1
     },
     {
       "weekday": "週一",
       "period": "晚餐 (17-21)",
-      "amount": 916,
+      "amount": 68,
       "count": 3
     },
     {
       "weekday": "週一",
       "period": "深夜 (21-06)",
-      "amount": 2160,
+      "amount": 1030,
       "count": 5
     },
     {
       "weekday": "週二",
       "period": "早餐 (06-11)",
-      "amount": 1010,
+      "amount": 260,
       "count": 2
     },
     {
       "weekday": "週二",
       "period": "午餐 (11-14)",
-      "amount": 440,
+      "amount": 205,
       "count": 1
     },
     {
       "weekday": "週二",
       "period": "下午茶 (14-17)",
-      "amount": 950,
+      "amount": 193,
       "count": 1
     },
     {
       "weekday": "週二",
       "period": "晚餐 (17-21)",
-      "amount": 695,
+      "amount": 203,
       "count": 2
     },
     {
       "weekday": "週二",
       "period": "深夜 (21-06)",
-      "amount": 3309,
+      "amount": 809,
       "count": 7
     },
     {
       "weekday": "週三",
       "period": "早餐 (06-11)",
-      "amount": -161,
+      "amount": 495,
       "count": 3
     },
     {
       "weekday": "週三",
       "period": "午餐 (11-14)",
-      "amount": 2200,
+      "amount": 45,
       "count": 1
     },
     {
       "weekday": "週三",
       "period": "下午茶 (14-17)",
-      "amount": 245,
+      "amount": 335,
       "count": 2
     },
     {
       "weekday": "週三",
       "period": "晚餐 (17-21)",
-      "amount": 680,
+      "amount": 420,
       "count": 2
     },
     {
       "weekday": "週三",
       "period": "深夜 (21-06)",
-      "amount": 2001,
+      "amount": 1267,
       "count": 5
     },
     {
       "weekday": "週四",
       "period": "早餐 (06-11)",
-      "amount": 845,
+      "amount": 337,
       "count": 3
     },
     {
@@ -312,109 +276,109 @@
     {
       "weekday": "週四",
       "period": "下午茶 (14-17)",
-      "amount": 199,
+      "amount": 55,
       "count": 1
     },
     {
       "weekday": "週四",
       "period": "晚餐 (17-21)",
-      "amount": 1039,
+      "amount": 780,
       "count": 4
     },
     {
       "weekday": "週四",
       "period": "深夜 (21-06)",
-      "amount": 2110,
+      "amount": 630,
       "count": 2
     },
     {
       "weekday": "週五",
       "period": "早餐 (06-11)",
-      "amount": 2110,
+      "amount": 275,
       "count": 2
     },
     {
       "weekday": "週五",
       "period": "午餐 (11-14)",
-      "amount": 1130,
+      "amount": 564,
       "count": 3
     },
     {
       "weekday": "週五",
       "period": "下午茶 (14-17)",
-      "amount": 290,
+      "amount": 260,
       "count": 1
     },
     {
       "weekday": "週五",
       "period": "晚餐 (17-21)",
-      "amount": 651,
+      "amount": 104,
       "count": 1
     },
     {
       "weekday": "週五",
       "period": "深夜 (21-06)",
-      "amount": 3539,
+      "amount": 943,
       "count": 4
     },
     {
       "weekday": "週六",
       "period": "早餐 (06-11)",
-      "amount": 1410,
+      "amount": 1528,
       "count": 4
     },
     {
       "weekday": "週六",
       "period": "午餐 (11-14)",
-      "amount": 690,
+      "amount": 35,
       "count": 1
     },
     {
       "weekday": "週六",
       "period": "下午茶 (14-17)",
-      "amount": 1399,
+      "amount": 607,
       "count": 2
     },
     {
       "weekday": "週六",
       "period": "晚餐 (17-21)",
-      "amount": 490,
+      "amount": 175,
       "count": 1
     },
     {
       "weekday": "週六",
       "period": "深夜 (21-06)",
-      "amount": 3390,
+      "amount": 622,
       "count": 4
     },
     {
       "weekday": "週日",
       "period": "早餐 (06-11)",
-      "amount": 3640,
+      "amount": 763,
       "count": 6
     },
     {
       "weekday": "週日",
       "period": "午餐 (11-14)",
-      "amount": 561,
+      "amount": 394,
       "count": 2
     },
     {
       "weekday": "週日",
       "period": "下午茶 (14-17)",
-      "amount": 920,
+      "amount": 307,
       "count": 3
     },
     {
       "weekday": "週日",
       "period": "晚餐 (17-21)",
-      "amount": 488,
+      "amount": 125,
       "count": 1
     },
     {
       "weekday": "週日",
       "period": "深夜 (21-06)",
-      "amount": 3897,
+      "amount": 1436,
       "count": 7
     }
   ],
@@ -426,7 +390,7 @@
       "date": "2026-05-25",
       "sellerName": "威秀影城信義店",
       "sellerBan": "66554433",
-      "amount": 720,
+      "amount": 148,
       "invStatus": "已開立",
       "invPeriod": "11506",
       "timePeriod": "深夜 (21-06)",
@@ -434,10 +398,17 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "雙人電影套票(含爆米花飲料)",
+          "itemName": "吐司",
+          "qty": 3,
+          "price": 45,
+          "amount": 135,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
           "qty": 1,
-          "price": 720,
-          "amount": 720,
+          "price": 13,
+          "amount": 13,
           "category": "飲食"
         }
       ]
@@ -449,7 +420,7 @@
       "date": "2026-05-24",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 65,
       "invStatus": "已開立",
       "invPeriod": "11506",
       "timePeriod": "下午茶 (14-17)",
@@ -457,305 +428,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "洋芋片",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "RV10000012",
-      "invDate": "2026/05/23",
-      "invTime": "07:59:45",
-      "date": "2026-05-23",
-      "sellerName": "康是美大安店",
-      "sellerBan": "44332211",
-      "amount": 830,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        },
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "YC10000052",
-      "invDate": "2026/05/22",
-      "invTime": "10:54:00",
-      "date": "2026-05-22",
-      "sellerName": "爭鮮迴轉壽司板橋店",
-      "sellerBan": "77889900",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "RC10000019",
-      "invDate": "2026/05/22",
-      "invTime": "00:25:04",
-      "date": "2026-05-22",
-      "sellerName": "爭鮮迴轉壽司板橋店",
-      "sellerBan": "77889900",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "PZ10000051",
-      "invDate": "2026/05/20",
-      "invTime": "11:00:51",
-      "date": "2026-05-20",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 2200,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "簡約皮夾",
-          "qty": 1,
-          "price": 2200,
-          "amount": 2200,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "PA10000001",
-      "invDate": "2026/05/20",
-      "invTime": "03:09:55",
-      "date": "2026-05-20",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 75,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "純喫茶綠茶",
-          "qty": 3,
-          "price": 25,
-          "amount": 75,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "XP10000023",
-      "invDate": "2026/05/19",
-      "invTime": "19:18:34",
-      "date": "2026-05-19",
-      "sellerName": "蝦皮購物-樂購蝦皮",
-      "sellerBan": "33445566",
-      "amount": 490,
-      "invStatus": "已作廢",
-      "invPeriod": "11506",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "無線滑鼠",
-          "qty": 1,
-          "price": 490,
-          "amount": 490,
-          "category": "3C配件"
-        }
-      ]
-    },
-    {
-      "invNum": "TB10000043",
-      "invDate": "2026/05/19",
-      "invTime": "02:13:09",
-      "date": "2026-05-19",
-      "sellerName": "燦坤3C南京東路店",
-      "sellerBan": "55667788",
-      "amount": 890,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Type-C Hub 轉接器",
-          "qty": 1,
-          "price": 890,
-          "amount": 890,
-          "category": "3C配件"
-        }
-      ]
-    },
-    {
-      "invNum": "ZY10000038",
-      "invDate": "2026/05/19",
-      "invTime": "00:32:14",
-      "date": "2026-05-19",
-      "sellerName": "屈臣氏南京店",
-      "sellerBan": "33221100",
-      "amount": 1120,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        },
-        {
-          "itemName": "防曬乳",
-          "qty": 1,
-          "price": 290,
-          "amount": 290,
-          "category": "醫療"
-        },
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "YC10000067",
-      "invDate": "2026/05/18",
-      "invTime": "12:03:24",
-      "date": "2026-05-18",
-      "sellerName": "威秀影城信義店",
-      "sellerBan": "66554433",
-      "amount": 720,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "雙人電影套票(含爆米花飲料)",
-          "qty": 1,
-          "price": 720,
-          "amount": 720,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "BN10000044",
-      "invDate": "2026/05/16",
-      "invTime": "05:43:55",
-      "date": "2026-05-16",
-      "sellerName": "屈臣氏南京店",
-      "sellerBan": "33221100",
-      "amount": 950,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        },
-        {
-          "itemName": "洗面乳",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
-        },
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "QH10000087",
-      "invDate": "2026/05/14",
-      "invTime": "17:38:37",
-      "date": "2026-05-14",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 73,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "純喫茶綠茶",
-          "qty": 1,
-          "price": 25,
-          "amount": 25,
-          "category": "飲食"
-        },
-        {
-          "itemName": "茶葉蛋",
-          "qty": 1,
-          "price": 13,
-          "amount": 13,
+          "price": 30,
+          "amount": 30,
           "category": "飲食"
         },
         {
@@ -768,229 +444,130 @@
       ]
     },
     {
-      "invNum": "AF10000002",
-      "invDate": "2026/05/10",
-      "invTime": "21:55:07",
-      "date": "2026-05-10",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 1280,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "美味雙人餐",
-          "qty": 1,
-          "price": 1280,
-          "amount": 1280,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "VO10000085",
-      "invDate": "2026/05/10",
-      "invTime": "15:32:13",
-      "date": "2026-05-10",
-      "sellerName": "爭鮮迴轉壽司板橋店",
-      "sellerBan": "77889900",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "OS10000032",
-      "invDate": "2026/05/05",
-      "invTime": "07:48:00",
-      "date": "2026-05-05",
-      "sellerName": "爭鮮迴轉壽司板橋店",
-      "sellerBan": "77889900",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "EF10000042",
-      "invDate": "2026/05/05",
-      "invTime": "05:38:09",
-      "date": "2026-05-05",
-      "sellerName": "統一超商股份有限公司第六分公司",
-      "sellerBan": "22334455",
-      "amount": 170,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "吐司",
-          "qty": 3,
-          "price": 45,
-          "amount": 135,
-          "category": "飲食"
-        },
-        {
-          "itemName": "御飯糰",
-          "qty": 1,
-          "price": 35,
-          "amount": 35,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "GG10000086",
-      "invDate": "2026/05/02",
-      "invTime": "16:23:11",
-      "date": "2026-05-02",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 1200,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "香氛蠟燭",
-          "qty": 1,
-          "price": 1200,
-          "amount": 1200,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "UU10000033",
-      "invDate": "2026/05/02",
-      "invTime": "08:50:50",
-      "date": "2026-05-02",
-      "sellerName": "星巴克咖啡台北南京店",
-      "sellerBan": "11223344",
-      "amount": 100,
-      "invStatus": "已開立",
-      "invPeriod": "11506",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "經典起司蛋糕",
-          "qty": 1,
-          "price": 100,
-          "amount": 100,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "LF10000076",
-      "invDate": "2026/04/30",
-      "invTime": "16:05:05",
-      "date": "2026-04-30",
-      "sellerName": "蝦皮購物-樂購蝦皮",
-      "sellerBan": "33445566",
-      "amount": 199,
-      "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "高磅數男士短T",
-          "qty": 1,
-          "price": 199,
-          "amount": 199,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "ZP10000084",
-      "invDate": "2026/04/29",
-      "invTime": "19:20:16",
-      "date": "2026-04-29",
+      "invNum": "RV10000012",
+      "invDate": "2026/05/23",
+      "invTime": "07:59:45",
+      "date": "2026-05-23",
       "sellerName": "康是美大安店",
       "sellerBan": "44332211",
-      "amount": 560,
+      "amount": 55,
       "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週三",
+      "invPeriod": "11506",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週六",
       "isRefund": false,
       "items": [
         {
-          "itemName": "醫用口罩(50入)",
+          "itemName": "洋芋片",
           "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
         },
         {
-          "itemName": "洗面乳",
+          "itemName": "純喫茶綠茶",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
-        },
-        {
-          "itemName": "防曬乳",
-          "qty": 1,
-          "price": 290,
-          "amount": 290,
-          "category": "醫療"
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
         }
       ]
     },
     {
-      "invNum": "GB10000029",
-      "invDate": "2026/04/26",
-      "invTime": "04:24:20",
-      "date": "2026-04-26",
-      "sellerName": "統一超商股份有限公司第六分公司",
-      "sellerBan": "22334455",
-      "amount": 219,
+      "invNum": "YC10000052",
+      "invDate": "2026/05/22",
+      "invTime": "10:54:00",
+      "date": "2026-05-22",
+      "sellerName": "爭鮮迴轉壽司板橋店",
+      "sellerBan": "77889900",
+      "amount": 210,
       "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週日",
+      "invPeriod": "11506",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週五",
       "isRefund": false,
       "items": [
         {
           "itemName": "鮮乳",
-          "qty": 1,
+          "qty": 2,
           "price": 95,
-          "amount": 95,
+          "amount": 190,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "RC10000019",
+      "invDate": "2026/05/22",
+      "invTime": "00:25:04",
+      "date": "2026-05-22",
+      "sellerName": "爭鮮迴轉壽司板橋店",
+      "sellerBan": "77889900",
+      "amount": 89,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "PZ10000051",
+      "invDate": "2026/05/20",
+      "invTime": "11:00:51",
+      "date": "2026-05-20",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 45,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "午餐 (11-14)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "PA10000001",
+      "invDate": "2026/05/20",
+      "invTime": "03:09:55",
+      "date": "2026-05-20",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 114,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
           "category": "飲食"
         },
         {
@@ -998,13 +575,6 @@
           "qty": 3,
           "price": 13,
           "amount": 39,
-          "category": "飲食"
-        },
-        {
-          "itemName": "礦泉水",
-          "qty": 2,
-          "price": 20,
-          "amount": 40,
           "category": "飲食"
         },
         {
@@ -1017,13 +587,512 @@
       ]
     },
     {
+      "invNum": "XP10000023",
+      "invDate": "2026/05/19",
+      "invTime": "19:18:34",
+      "date": "2026-05-19",
+      "sellerName": "蝦皮購物-樂購蝦皮",
+      "sellerBan": "33445566",
+      "amount": 178,
+      "invStatus": "已作廢",
+      "invPeriod": "11506",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 2,
+          "price": 89,
+          "amount": 178,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "TB10000043",
+      "invDate": "2026/05/19",
+      "invTime": "02:13:09",
+      "date": "2026-05-19",
+      "sellerName": "燦坤3C南京東路店",
+      "sellerBan": "55667788",
+      "amount": 20,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "ZY10000038",
+      "invDate": "2026/05/19",
+      "invTime": "00:32:14",
+      "date": "2026-05-19",
+      "sellerName": "屈臣氏南京店",
+      "sellerBan": "33221100",
+      "amount": 154,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "YC10000067",
+      "invDate": "2026/05/18",
+      "invTime": "12:03:24",
+      "date": "2026-05-18",
+      "sellerName": "威秀影城信義店",
+      "sellerBan": "66554433",
+      "amount": 390,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "午餐 (11-14)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 3,
+          "price": 55,
+          "amount": 165,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 2,
+          "price": 30,
+          "amount": 60,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "BN10000044",
+      "invDate": "2026/05/16",
+      "invTime": "05:43:55",
+      "date": "2026-05-16",
+      "sellerName": "屈臣氏南京店",
+      "sellerBan": "33221100",
+      "amount": 178,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 2,
+          "price": 89,
+          "amount": 178,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "QH10000087",
+      "invDate": "2026/05/14",
+      "invTime": "17:38:37",
+      "date": "2026-05-14",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 374,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "AF10000002",
+      "invDate": "2026/05/10",
+      "invTime": "21:55:07",
+      "date": "2026-05-10",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 432,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 3,
+          "price": 89,
+          "amount": 267,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "VO10000085",
+      "invDate": "2026/05/10",
+      "invTime": "15:32:13",
+      "date": "2026-05-10",
+      "sellerName": "爭鮮迴轉壽司板橋店",
+      "sellerBan": "77889900",
+      "amount": 119,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "OS10000032",
+      "invDate": "2026/05/05",
+      "invTime": "07:48:00",
+      "date": "2026-05-05",
+      "sellerName": "爭鮮迴轉壽司板橋店",
+      "sellerBan": "77889900",
+      "amount": 30,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "EF10000042",
+      "invDate": "2026/05/05",
+      "invTime": "05:38:09",
+      "date": "2026-05-05",
+      "sellerName": "統一超商股份有限公司第六分公司",
+      "sellerBan": "22334455",
+      "amount": 150,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "GG10000086",
+      "invDate": "2026/05/02",
+      "invTime": "16:23:11",
+      "date": "2026-05-02",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 437,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 3,
+          "price": 25,
+          "amount": 75,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 3,
+          "price": 89,
+          "amount": 267,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "UU10000033",
+      "invDate": "2026/05/02",
+      "invTime": "08:50:50",
+      "date": "2026-05-02",
+      "sellerName": "星巴克咖啡台北南京店",
+      "sellerBan": "11223344",
+      "amount": 602,
+      "invStatus": "已開立",
+      "invPeriod": "11506",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 3,
+          "price": 89,
+          "amount": 267,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "LF10000076",
+      "invDate": "2026/04/30",
+      "invTime": "16:05:05",
+      "date": "2026-04-30",
+      "sellerName": "蝦皮購物-樂購蝦皮",
+      "sellerBan": "33445566",
+      "amount": 55,
+      "invStatus": "已開立",
+      "invPeriod": "11504",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "ZP10000084",
+      "invDate": "2026/04/29",
+      "invTime": "19:20:16",
+      "date": "2026-04-29",
+      "sellerName": "康是美大安店",
+      "sellerBan": "44332211",
+      "amount": 171,
+      "invStatus": "已開立",
+      "invPeriod": "11504",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 2,
+          "price": 13,
+          "amount": 26,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "GB10000029",
+      "invDate": "2026/04/26",
+      "invTime": "04:24:20",
+      "date": "2026-04-26",
+      "sellerName": "統一超商股份有限公司第六分公司",
+      "sellerBan": "22334455",
+      "amount": 391,
+      "invStatus": "已開立",
+      "invPeriod": "11504",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 2,
+          "price": 89,
+          "amount": 178,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 3,
+          "price": 55,
+          "amount": 165,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
       "invNum": "ZD10000069",
       "invDate": "2026/04/22",
       "invTime": "22:04:17",
       "date": "2026-04-22",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 289,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1031,10 +1100,24 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 3,
+          "price": 30,
+          "amount": 90,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
+          "price": 89,
+          "amount": 89,
           "category": "飲食"
         }
       ]
@@ -1046,7 +1129,7 @@
       "date": "2026-04-21",
       "sellerName": "台鐵便當台北車站店",
       "sellerBan": "22113344",
-      "amount": 440,
+      "amount": 205,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "午餐 (11-14)",
@@ -1054,11 +1137,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "台鐵台北-花蓮火車票",
+          "itemName": "鮮乳",
           "qty": 1,
-          "price": 440,
-          "amount": 440,
-          "category": "交通"
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 2,
+          "price": 45,
+          "amount": 90,
+          "category": "飲食"
         }
       ]
     },
@@ -1069,7 +1166,7 @@
       "date": "2026-04-20",
       "sellerName": "台灣高速鐵路股份有限公司",
       "sellerBan": "55443322",
-      "amount": 120,
+      "amount": 40,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1077,11 +1174,11 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
+          "itemName": "礦泉水",
+          "qty": 2,
+          "price": 20,
+          "amount": 40,
+          "category": "飲食"
         }
       ]
     },
@@ -1092,7 +1189,7 @@
       "date": "2026-04-20",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 20,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "晚餐 (17-21)",
@@ -1100,10 +1197,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "礦泉水",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
+          "price": 20,
+          "amount": 20,
           "category": "飲食"
         }
       ]
@@ -1115,7 +1212,7 @@
       "date": "2026-04-19",
       "sellerName": "蝦皮購物-樂購蝦皮",
       "sellerBan": "33445566",
-      "amount": 299,
+      "amount": 205,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1123,11 +1220,32 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "iPhone 15 快充線",
+          "itemName": "拿鐵咖啡(大)",
           "qty": 1,
-          "price": 299,
-          "amount": 299,
-          "category": "3C配件"
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
         }
       ]
     },
@@ -1138,7 +1256,7 @@
       "date": "2026-04-19",
       "sellerName": "台鐵便當台北車站店",
       "sellerBan": "22113344",
-      "amount": 80,
+      "amount": 165,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1146,10 +1264,17 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "台鐵排骨便當",
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
           "qty": 1,
-          "price": 80,
-          "amount": 80,
+          "price": 95,
+          "amount": 95,
           "category": "飲食"
         }
       ]
@@ -1161,19 +1286,33 @@
       "date": "2026-04-18",
       "sellerName": "屈臣氏南京店",
       "sellerBan": "33221100",
-      "amount": 290,
+      "amount": -91,
       "invStatus": "已作廢",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
       "weekday": "週六",
-      "isRefund": false,
+      "isRefund": true,
       "items": [
         {
-          "itemName": "防曬乳",
+          "itemName": "[退貨] 純喫茶綠茶",
           "qty": 1,
-          "price": 290,
-          "amount": 290,
-          "category": "醫療"
+          "price": -25,
+          "amount": -25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "[退貨] 茶葉蛋",
+          "qty": 2,
+          "price": -13,
+          "amount": -26,
+          "category": "飲食"
+        },
+        {
+          "itemName": "[退貨] 礦泉水",
+          "qty": 2,
+          "price": -20,
+          "amount": -40,
+          "category": "飲食"
         }
       ]
     },
@@ -1184,7 +1323,7 @@
       "date": "2026-04-17",
       "sellerName": "家樂福桂林店",
       "sellerBan": "99001122",
-      "amount": 939,
+      "amount": 365,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1192,18 +1331,32 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "抽取式衛生紙(箱)",
-          "qty": 1,
-          "price": 699,
-          "amount": 699,
-          "category": "其它"
+          "itemName": "鮮乳",
+          "qty": 2,
+          "price": 95,
+          "amount": 190,
+          "category": "飲食"
         },
         {
-          "itemName": "無骨雞腿排",
+          "itemName": "洋芋片",
+          "qty": 2,
+          "price": 30,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 3,
+          "price": 20,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
           "qty": 1,
-          "price": 240,
-          "amount": 240,
-          "category": "其它"
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
         }
       ]
     },
@@ -1214,7 +1367,7 @@
       "date": "2026-04-16",
       "sellerName": "全家便利商店股份有限公司",
       "sellerBan": "88776655",
-      "amount": 35,
+      "amount": 130,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1222,10 +1375,17 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "御飯糰",
+          "itemName": "拿鐵咖啡(大)",
           "qty": 1,
-          "price": 35,
-          "amount": 35,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 3,
+          "price": 25,
+          "amount": 75,
           "category": "飲食"
         }
       ]
@@ -1237,7 +1397,7 @@
       "date": "2026-04-15",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 249,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "晚餐 (17-21)",
@@ -1245,10 +1405,31 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "礦泉水",
+          "qty": 3,
+          "price": 20,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
           "category": "飲食"
         }
       ]
@@ -1260,7 +1441,7 @@
       "date": "2026-04-14",
       "sellerName": "燦坤3C南京東路店",
       "sellerBan": "55667788",
-      "amount": 890,
+      "amount": 230,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1268,11 +1449,18 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "Type-C Hub 轉接器",
-          "qty": 1,
-          "price": 890,
-          "amount": 890,
-          "category": "3C配件"
+          "itemName": "鮮乳",
+          "qty": 2,
+          "price": 95,
+          "amount": 190,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 2,
+          "price": 20,
+          "amount": 40,
+          "category": "飲食"
         }
       ]
     },
@@ -1283,7 +1471,7 @@
       "date": "2026-04-10",
       "sellerName": "康是美大安店",
       "sellerBan": "44332211",
-      "amount": 290,
+      "amount": 260,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "下午茶 (14-17)",
@@ -1291,11 +1479,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "防曬乳",
+          "itemName": "純喫茶綠茶",
           "qty": 1,
-          "price": 290,
-          "amount": 290,
-          "category": "醫療"
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 3,
+          "price": 55,
+          "amount": 165,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
         }
       ]
     },
@@ -1306,7 +1508,7 @@
       "date": "2026-04-08",
       "sellerName": "Steam 數位娛樂",
       "sellerBan": "44556677",
-      "amount": 1599,
+      "amount": 95,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1314,11 +1516,11 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "Cyberpunk 2077",
+          "itemName": "鮮乳",
           "qty": 1,
-          "price": 1599,
-          "amount": 1599,
-          "category": "娛樂"
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
         }
       ]
     },
@@ -1329,7 +1531,7 @@
       "date": "2026-04-08",
       "sellerName": "康是美大安店",
       "sellerBan": "44332211",
-      "amount": 800,
+      "amount": 169,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1337,18 +1539,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "洗面乳",
+          "itemName": "吐司",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
         },
         {
-          "itemName": "綜合維他命",
+          "itemName": "便當-國民排骨",
           "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
         }
       ]
     },
@@ -1359,7 +1568,7 @@
       "date": "2026-04-03",
       "sellerName": "燦坤3C南京東路店",
       "sellerBan": "55667788",
-      "amount": 890,
+      "amount": 314,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "午餐 (11-14)",
@@ -1367,11 +1576,32 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "Type-C Hub 轉接器",
+          "itemName": "便當-國民排骨",
           "qty": 1,
-          "price": 890,
-          "amount": 890,
-          "category": "3C配件"
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 2,
+          "price": 20,
+          "amount": 40,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 3,
+          "price": 25,
+          "amount": 75,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
         }
       ]
     },
@@ -1382,19 +1612,33 @@
       "date": "2026-04-01",
       "sellerName": "新光三越信義A11",
       "sellerBan": "11002299",
-      "amount": -2200,
+      "amount": 150,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
       "weekday": "週三",
-      "isRefund": true,
+      "isRefund": false,
       "items": [
         {
-          "itemName": "[退貨] 簡約皮夾",
+          "itemName": "拿鐵咖啡(大)",
           "qty": 1,
-          "price": -2200,
-          "amount": -2200,
-          "category": "服飾"
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 2,
+          "price": 25,
+          "amount": 50,
+          "category": "飲食"
         }
       ]
     },
@@ -1405,7 +1649,7 @@
       "date": "2026-03-31",
       "sellerName": "台灣高速鐵路股份有限公司",
       "sellerBan": "55443322",
-      "amount": 120,
+      "amount": 205,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1413,11 +1657,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 2,
+          "price": 30,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
         }
       ]
     },
@@ -1428,7 +1686,7 @@
       "date": "2026-03-29",
       "sellerName": "Steam 數位娛樂",
       "sellerBan": "44556677",
-      "amount": 1990,
+      "amount": 171,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1436,11 +1694,32 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "Monster Hunter Wilds",
+          "itemName": "洋芋片",
           "qty": 1,
-          "price": 1990,
-          "amount": 1990,
-          "category": "娛樂"
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 2,
+          "price": 13,
+          "amount": 26,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 3,
+          "price": 20,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
         }
       ]
     },
@@ -1451,7 +1730,7 @@
       "date": "2026-03-26",
       "sellerName": "屈臣氏南京店",
       "sellerBan": "33221100",
-      "amount": 150,
+      "amount": 201,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "晚餐 (17-21)",
@@ -1459,11 +1738,32 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "醫用口罩(50入)",
+          "itemName": "鮮乳",
           "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 2,
+          "price": 13,
+          "amount": 26,
+          "category": "飲食"
         }
       ]
     },
@@ -1482,9 +1782,9 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "巧克力星冰樂",
-          "qty": 1,
-          "price": 165,
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 3,
+          "price": 55,
           "amount": 165,
           "category": "飲食"
         }
@@ -1497,7 +1797,7 @@
       "date": "2026-03-22",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 70,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1505,10 +1805,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
+          "itemName": "御飯糰",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
           "category": "飲食"
         }
       ]
@@ -1520,7 +1820,7 @@
       "date": "2026-03-22",
       "sellerName": "威秀影城信義店",
       "sellerBan": "66554433",
-      "amount": 720,
+      "amount": 170,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1528,10 +1828,31 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "雙人電影套票(含爆米花飲料)",
+          "itemName": "純喫茶綠茶",
           "qty": 1,
-          "price": 720,
-          "amount": 720,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
           "category": "飲食"
         }
       ]
@@ -1543,7 +1864,7 @@
       "date": "2026-03-21",
       "sellerName": "蝦皮購物-樂購蝦皮",
       "sellerBan": "33445566",
-      "amount": 199,
+      "amount": 170,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "下午茶 (14-17)",
@@ -1551,11 +1872,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "高磅數男士短T",
+          "itemName": "吐司",
           "qty": 1,
-          "price": 199,
-          "amount": 199,
-          "category": "服飾"
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 3,
+          "price": 30,
+          "amount": 90,
+          "category": "飲食"
         }
       ]
     },
@@ -1566,7 +1901,7 @@
       "date": "2026-03-19",
       "sellerName": "燦坤3C南京東路店",
       "sellerBan": "55667788",
-      "amount": 690,
+      "amount": 35,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
@@ -1574,11 +1909,11 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "10000mAh 行動電源",
+          "itemName": "御飯糰",
           "qty": 1,
-          "price": 690,
-          "amount": 690,
-          "category": "3C配件"
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
         }
       ]
     },
@@ -1589,7 +1924,7 @@
       "date": "2026-03-18",
       "sellerName": "麥當勞台北重慶店",
       "sellerBan": "77665544",
-      "amount": 36,
+      "amount": 552,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1597,10 +1932,17 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "蛋捲冰淇淋",
-          "qty": 2,
-          "price": 18,
-          "amount": 36,
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 3,
+          "price": 89,
+          "amount": 267,
           "category": "飲食"
         }
       ]
@@ -1612,7 +1954,7 @@
       "date": "2026-03-18",
       "sellerName": "全家便利商店股份有限公司",
       "sellerBan": "88776655",
-      "amount": 385,
+      "amount": 350,
       "invStatus": "已作廢",
       "invPeriod": "11504",
       "timePeriod": "下午茶 (14-17)",
@@ -1620,17 +1962,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "小美冰淇淋",
+          "itemName": "拿鐵咖啡(大)",
           "qty": 1,
-          "price": 35,
-          "amount": 35,
-          "category": "飲食"
-        },
-        {
-          "itemName": "吐司",
-          "qty": 3,
-          "price": 45,
-          "amount": 135,
+          "price": 55,
+          "amount": 55,
           "category": "飲食"
         },
         {
@@ -1641,10 +1976,10 @@
           "category": "飲食"
         },
         {
-          "itemName": "純喫茶綠茶",
-          "qty": 1,
-          "price": 25,
-          "amount": 25,
+          "itemName": "小美冰淇淋",
+          "qty": 3,
+          "price": 35,
+          "amount": 105,
           "category": "飲食"
         }
       ]
@@ -1656,19 +1991,26 @@
       "date": "2026-03-17",
       "sellerName": "燦坤3C南京東路店",
       "sellerBan": "55667788",
-      "amount": 690,
+      "amount": -144,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
       "weekday": "週二",
-      "isRefund": false,
+      "isRefund": true,
       "items": [
         {
-          "itemName": "10000mAh 行動電源",
+          "itemName": "[退貨] 便當-國民排骨",
           "qty": 1,
-          "price": 690,
-          "amount": 690,
-          "category": "3C配件"
+          "price": -89,
+          "amount": -89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "[退貨] 拿鐵咖啡(大)",
+          "qty": 1,
+          "price": -55,
+          "amount": -55,
+          "category": "飲食"
         }
       ]
     },
@@ -1679,7 +2021,7 @@
       "date": "2026-03-15",
       "sellerName": "康是美大安店",
       "sellerBan": "44332211",
-      "amount": 680,
+      "amount": 123,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "下午茶 (14-17)",
@@ -1687,11 +2029,18 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "綜合維他命",
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
           "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
         }
       ]
     },
@@ -1702,7 +2051,7 @@
       "date": "2026-03-10",
       "sellerName": "台灣高速鐵路股份有限公司",
       "sellerBan": "55443322",
-      "amount": 120,
+      "amount": 25,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1710,11 +2059,11 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
+          "itemName": "純喫茶綠茶",
           "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
         }
       ]
     },
@@ -1725,7 +2074,7 @@
       "date": "2026-03-09",
       "sellerName": "全家便利商店股份有限公司",
       "sellerBan": "88776655",
-      "amount": 308,
+      "amount": 13,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "晚餐 (17-21)",
@@ -1733,24 +2082,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "便當-國民排骨",
-          "qty": 2,
-          "price": 89,
-          "amount": 178,
-          "category": "飲食"
-        },
-        {
-          "itemName": "洋芋片",
-          "qty": 2,
-          "price": 30,
-          "amount": 60,
-          "category": "飲食"
-        },
-        {
-          "itemName": "小美冰淇淋",
-          "qty": 2,
-          "price": 35,
-          "amount": 70,
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
           "category": "飲食"
         }
       ]
@@ -1762,7 +2097,7 @@
       "date": "2026-03-09",
       "sellerName": "台鐵便當台北車站店",
       "sellerBan": "22113344",
-      "amount": 100,
+      "amount": 105,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "深夜 (21-06)",
@@ -1770,10 +2105,24 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "經典八角便當",
+          "itemName": "純喫茶綠茶",
+          "qty": 2,
+          "price": 25,
+          "amount": 50,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
           "qty": 1,
-          "price": 100,
-          "amount": 100,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
           "category": "飲食"
         }
       ]
@@ -1785,18 +2134,39 @@
       "date": "2026-03-08",
       "sellerName": "威秀影城信義店",
       "sellerBan": "66554433",
-      "amount": -720,
+      "amount": 254,
       "invStatus": "已開立",
       "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
       "weekday": "週日",
-      "isRefund": true,
+      "isRefund": false,
       "items": [
         {
-          "itemName": "[退貨] 雙人電影套票(含爆米花飲料)",
+          "itemName": "小美冰淇淋",
           "qty": 1,
-          "price": -720,
-          "amount": -720,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 3,
+          "price": 35,
+          "amount": 105,
           "category": "飲食"
         }
       ]
@@ -1816,82 +2186,6 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "LW10000037",
-      "invDate": "2026/03/05",
-      "invTime": "02:44:40",
-      "date": "2026-03-05",
-      "sellerName": "Steam 數位娛樂",
-      "sellerBan": "44556677",
-      "amount": 1990,
-      "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Monster Hunter Wilds",
-          "qty": 1,
-          "price": 1990,
-          "amount": 1990,
-          "category": "娛樂"
-        }
-      ]
-    },
-    {
-      "invNum": "RA10000081",
-      "invDate": "2026/03/04",
-      "invTime": "05:22:22",
-      "date": "2026-03-04",
-      "sellerName": "康是美大安店",
-      "sellerBan": "44332211",
-      "amount": 970,
-      "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "防曬乳",
-          "qty": 1,
-          "price": 290,
-          "amount": 290,
-          "category": "醫療"
-        },
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "IX10000088",
-      "invDate": "2026/03/02",
-      "invTime": "09:53:34",
-      "date": "2026-03-02",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 326,
-      "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
           "itemName": "吐司",
           "qty": 1,
           "price": 45,
@@ -1899,810 +2193,10 @@
           "category": "飲食"
         },
         {
-          "itemName": "茶葉蛋",
+          "itemName": "礦泉水",
           "qty": 1,
-          "price": 13,
-          "amount": 13,
-          "category": "飲食"
-        },
-        {
-          "itemName": "洋芋片",
-          "qty": 3,
-          "price": 30,
-          "amount": 90,
-          "category": "飲食"
-        },
-        {
-          "itemName": "便當-國民排骨",
-          "qty": 2,
-          "price": 89,
-          "amount": 178,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "SS10000089",
-      "invDate": "2026/03/01",
-      "invTime": "13:56:45",
-      "date": "2026-03-01",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 190,
-      "invStatus": "已開立",
-      "invPeriod": "11504",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "鮮乳",
-          "qty": 1,
-          "price": 95,
-          "amount": 95,
-          "category": "飲食"
-        },
-        {
-          "itemName": "小美冰淇淋",
-          "qty": 2,
-          "price": 35,
-          "amount": 70,
-          "category": "飲食"
-        },
-        {
-          "itemName": "純喫茶綠茶",
-          "qty": 1,
-          "price": 25,
-          "amount": 25,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "FB10000030",
-      "invDate": "2026/02/28",
-      "invTime": "21:25:28",
-      "date": "2026-02-28",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 2200,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "簡約皮夾",
-          "qty": 1,
-          "price": 2200,
-          "amount": 2200,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "AF10000065",
-      "invDate": "2026/02/28",
-      "invTime": "08:06:59",
-      "date": "2026-02-28",
-      "sellerName": "麥當勞台北重慶店",
-      "sellerBan": "77665544",
-      "amount": 330,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "麥克鷄塊套餐",
-          "qty": 1,
-          "price": 135,
-          "amount": 135,
-          "category": "飲食"
-        },
-        {
-          "itemName": "薯條(大)",
-          "qty": 3,
-          "price": 65,
-          "amount": 195,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "FL10000093",
-      "invDate": "2026/02/26",
-      "invTime": "17:46:33",
-      "date": "2026-02-26",
-      "sellerName": "統一超商股份有限公司第六分公司",
-      "sellerBan": "22334455",
-      "amount": 328,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "洋芋片",
-          "qty": 1,
-          "price": 30,
-          "amount": 30,
-          "category": "飲食"
-        },
-        {
-          "itemName": "茶葉蛋",
-          "qty": 1,
-          "price": 13,
-          "amount": 13,
-          "category": "飲食"
-        },
-        {
-          "itemName": "鮮乳",
-          "qty": 3,
-          "price": 95,
-          "amount": 285,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "LY10000071",
-      "invDate": "2026/02/20",
-      "invTime": "13:15:39",
-      "date": "2026-02-20",
-      "sellerName": "爭鮮迴轉壽司板橋店",
-      "sellerBan": "77889900",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "ND10000036",
-      "invDate": "2026/02/19",
-      "invTime": "06:55:31",
-      "date": "2026-02-19",
-      "sellerName": "台灣高速鐵路股份有限公司",
-      "sellerBan": "55443322",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
-        }
-      ]
-    },
-    {
-      "invNum": "CN10000077",
-      "invDate": "2026/02/13",
-      "invTime": "23:59:16",
-      "date": "2026-02-13",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 3200,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "男士運動鞋",
-          "qty": 1,
-          "price": 3200,
-          "amount": 3200,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "SE10000011",
-      "invDate": "2026/02/13",
-      "invTime": "19:26:50",
-      "date": "2026-02-13",
-      "sellerName": "家樂福桂林店",
-      "sellerBan": "99001122",
-      "amount": 651,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "泡麵(袋)",
-          "qty": 2,
-          "price": 99,
-          "amount": 198,
-          "category": "飲食"
-        },
-        {
-          "itemName": "家庭號鮮乳",
-          "qty": 1,
-          "price": 185,
-          "amount": 185,
-          "category": "飲食"
-        },
-        {
-          "itemName": "有機高麗菜",
-          "qty": 1,
-          "price": 69,
-          "amount": 69,
-          "category": "其它"
-        },
-        {
-          "itemName": "沐浴乳",
-          "qty": 1,
-          "price": 199,
-          "amount": 199,
-          "category": "其它"
-        }
-      ]
-    },
-    {
-      "invNum": "WA10000062",
-      "invDate": "2026/02/11",
-      "invTime": "06:26:46",
-      "date": "2026-02-11",
-      "sellerName": "台鐵便當台北車站店",
-      "sellerBan": "22113344",
-      "amount": 440,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "台鐵台北-花蓮火車票",
-          "qty": 1,
-          "price": 440,
-          "amount": 440,
-          "category": "交通"
-        }
-      ]
-    },
-    {
-      "invNum": "IE10000004",
-      "invDate": "2026/02/10",
-      "invTime": "15:23:12",
-      "date": "2026-02-10",
-      "sellerName": "康是美大安店",
-      "sellerBan": "44332211",
-      "amount": 950,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        },
-        {
-          "itemName": "洗面乳",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
-        },
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "AJ10000058",
-      "invDate": "2026/02/08",
-      "invTime": "19:51:51",
-      "date": "2026-02-08",
-      "sellerName": "Steam 數位娛樂",
-      "sellerBan": "44556677",
-      "amount": 488,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Hades II",
-          "qty": 1,
-          "price": 488,
-          "amount": 488,
-          "category": "娛樂"
-        }
-      ]
-    },
-    {
-      "invNum": "DT10000015",
-      "invDate": "2026/02/06",
-      "invTime": "09:38:38",
-      "date": "2026-02-06",
-      "sellerName": "Steam 數位娛樂",
-      "sellerBan": "44556677",
-      "amount": 1990,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週五",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Monster Hunter Wilds",
-          "qty": 1,
-          "price": 1990,
-          "amount": 1990,
-          "category": "娛樂"
-        }
-      ]
-    },
-    {
-      "invNum": "ZE10000056",
-      "invDate": "2026/02/03",
-      "invTime": "23:11:47",
-      "date": "2026-02-03",
-      "sellerName": "蝦皮購物-樂購蝦皮",
-      "sellerBan": "33445566",
-      "amount": 199,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週二",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "高磅數男士短T",
-          "qty": 1,
-          "price": 199,
-          "amount": 199,
-          "category": "服飾"
-        }
-      ]
-    },
-    {
-      "invNum": "YE10000026",
-      "invDate": "2026/02/02",
-      "invTime": "17:18:16",
-      "date": "2026-02-02",
-      "sellerName": "Steam 數位娛樂",
-      "sellerBan": "44556677",
-      "amount": 488,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Hades II",
-          "qty": 1,
-          "price": 488,
-          "amount": 488,
-          "category": "娛樂"
-        }
-      ]
-    },
-    {
-      "invNum": "IX10000059",
-      "invDate": "2026/02/02",
-      "invTime": "01:31:22",
-      "date": "2026-02-02",
-      "sellerName": "康是美大安店",
-      "sellerBan": "44332211",
-      "amount": 270,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "洗面乳",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
-        },
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "TE10000053",
-      "invDate": "2026/01/30",
-      "invTime": "03:53:49",
-      "date": "2026-01-30",
-      "sellerName": "威秀影城信義店",
-      "sellerBan": "66554433",
-      "amount": -720,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週五",
-      "isRefund": true,
-      "items": [
-        {
-          "itemName": "[退貨] 雙人電影套票(含爆米花飲料)",
-          "qty": 1,
-          "price": -720,
-          "amount": -720,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "TG10000000",
-      "invDate": "2026/01/29",
-      "invTime": "00:54:38",
-      "date": "2026-01-29",
-      "sellerName": "台灣高速鐵路股份有限公司",
-      "sellerBan": "55443322",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
-        }
-      ]
-    },
-    {
-      "invNum": "FU10000082",
-      "invDate": "2026/01/28",
-      "invTime": "15:28:44",
-      "date": "2026-01-28",
-      "sellerName": "台鐵便當台北車站店",
-      "sellerBan": "22113344",
-      "amount": 80,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "台鐵排骨便當",
-          "qty": 1,
-          "price": 80,
-          "amount": 80,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "HQ10000009",
-      "invDate": "2026/01/26",
-      "invTime": "13:50:23",
-      "date": "2026-01-26",
-      "sellerName": "麥當勞台北重慶店",
-      "sellerBan": "77665544",
-      "amount": 259,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "大麥克經典套餐",
-          "qty": 1,
-          "price": 140,
-          "amount": 140,
-          "category": "飲食"
-        },
-        {
-          "itemName": "蛋捲冰淇淋",
-          "qty": 3,
-          "price": 18,
-          "amount": 54,
-          "category": "飲食"
-        },
-        {
-          "itemName": "薯條(大)",
-          "qty": 1,
-          "price": 65,
-          "amount": 65,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "KI10000035",
-      "invDate": "2026/01/26",
-      "invTime": "02:12:24",
-      "date": "2026-01-26",
-      "sellerName": "屈臣氏南京店",
-      "sellerBan": "33221100",
-      "amount": 950,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "綜合維他命",
-          "qty": 1,
-          "price": 680,
-          "amount": 680,
-          "category": "醫療"
-        },
-        {
-          "itemName": "醫用口罩(50入)",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
-        },
-        {
-          "itemName": "洗面乳",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "醫療"
-        }
-      ]
-    },
-    {
-      "invNum": "CW10000005",
-      "invDate": "2026/01/24",
-      "invTime": "13:49:57",
-      "date": "2026-01-24",
-      "sellerName": "燦坤3C南京東路店",
-      "sellerBan": "55667788",
-      "amount": 690,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "午餐 (11-14)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "10000mAh 行動電源",
-          "qty": 1,
-          "price": 690,
-          "amount": 690,
-          "category": "3C配件"
-        }
-      ]
-    },
-    {
-      "invNum": "RF10000078",
-      "invDate": "2026/01/24",
-      "invTime": "08:33:04",
-      "date": "2026-01-24",
-      "sellerName": "星巴克咖啡台北南京店",
-      "sellerBan": "11223344",
-      "amount": 150,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "特選那鐵咖啡",
-          "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "WD10000017",
-      "invDate": "2026/01/24",
-      "invTime": "01:42:55",
-      "date": "2026-01-24",
-      "sellerName": "台灣高速鐵路股份有限公司",
-      "sellerBan": "55443322",
-      "amount": 120,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週六",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
-          "category": "交通"
-        }
-      ]
-    },
-    {
-      "invNum": "VZ10000025",
-      "invDate": "2026/01/22",
-      "invTime": "17:41:39",
-      "date": "2026-01-22",
-      "sellerName": "Steam 數位娛樂",
-      "sellerBan": "44556677",
-      "amount": 488,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週四",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Hades II",
-          "qty": 1,
-          "price": 488,
-          "amount": 488,
-          "category": "娛樂"
-        }
-      ]
-    },
-    {
-      "invNum": "JN10000066",
-      "invDate": "2026/01/18",
-      "invTime": "10:09:45",
-      "date": "2026-01-18",
-      "sellerName": "新光三越信義A11",
-      "sellerBan": "11002299",
-      "amount": 1280,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "美味雙人餐",
-          "qty": 1,
-          "price": 1280,
-          "amount": 1280,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "KY10000045",
-      "invDate": "2026/01/18",
-      "invTime": "08:33:48",
-      "date": "2026-01-18",
-      "sellerName": "燦坤3C南京東路店",
-      "sellerBan": "55667788",
-      "amount": 890,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "早餐 (06-11)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "Type-C Hub 轉接器",
-          "qty": 1,
-          "price": 890,
-          "amount": 890,
-          "category": "3C配件"
-        }
-      ]
-    },
-    {
-      "invNum": "RU10000008",
-      "invDate": "2026/01/18",
-      "invTime": "01:40:06",
-      "date": "2026-01-18",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 324,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "便當-國民排骨",
-          "qty": 1,
-          "price": 89,
-          "amount": 89,
-          "category": "飲食"
-        },
-        {
-          "itemName": "拿鐵咖啡(大)",
-          "qty": 3,
-          "price": 55,
-          "amount": 165,
-          "category": "飲食"
-        },
-        {
-          "itemName": "御飯糰",
-          "qty": 2,
-          "price": 35,
-          "amount": 70,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "WB10000031",
-      "invDate": "2026/01/18",
-      "invTime": "01:08:37",
-      "date": "2026-01-18",
-      "sellerName": "星巴克咖啡台北南京店",
-      "sellerBan": "11223344",
-      "amount": 165,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週日",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "巧克力星冰樂",
-          "qty": 1,
-          "price": 165,
-          "amount": 165,
-          "category": "飲食"
-        }
-      ]
-    },
-    {
-      "invNum": "QV10000055",
-      "invDate": "2026/01/14",
-      "invTime": "03:21:37",
-      "date": "2026-01-14",
-      "sellerName": "統一超商股份有限公司第六分公司",
-      "sellerBan": "22334455",
-      "amount": 130,
-      "invStatus": "已作廢",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
-      "weekday": "週三",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "純喫茶綠茶",
-          "qty": 3,
-          "price": 25,
-          "amount": 75,
+          "price": 20,
+          "amount": 20,
           "category": "飲食"
         },
         {
@@ -2715,130 +2209,824 @@
       ]
     },
     {
-      "invNum": "GW10000083",
-      "invDate": "2026/01/13",
-      "invTime": "20:17:40",
-      "date": "2026-01-13",
-      "sellerName": "蝦皮購物-樂購蝦皮",
-      "sellerBan": "33445566",
-      "amount": 490,
+      "invNum": "LW10000037",
+      "invDate": "2026/03/05",
+      "invTime": "02:44:40",
+      "date": "2026-03-05",
+      "sellerName": "Steam 數位娛樂",
+      "sellerBan": "44556677",
+      "amount": 330,
       "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "晚餐 (17-21)",
-      "weekday": "週二",
+      "invPeriod": "11504",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週四",
       "isRefund": false,
       "items": [
         {
-          "itemName": "無線滑鼠",
-          "qty": 1,
-          "price": 490,
-          "amount": 490,
-          "category": "3C配件"
-        }
-      ]
-    },
-    {
-      "invNum": "NZ10000006",
-      "invDate": "2026/01/12",
-      "invTime": "16:43:37",
-      "date": "2026-01-12",
-      "sellerName": "家樂福桂林店",
-      "sellerBan": "99001122",
-      "amount": 1083,
-      "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "下午茶 (14-17)",
-      "weekday": "週一",
-      "isRefund": false,
-      "items": [
-        {
-          "itemName": "家庭號鮮乳",
-          "qty": 1,
-          "price": 185,
-          "amount": 185,
+          "itemName": "御飯糰",
+          "qty": 3,
+          "price": 35,
+          "amount": 105,
           "category": "飲食"
         },
         {
-          "itemName": "洗衣精補充包",
-          "qty": 1,
-          "price": 130,
-          "amount": 130,
-          "category": "其它"
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 2,
+          "price": 55,
+          "amount": 110,
+          "category": "飲食"
         },
         {
-          "itemName": "抽取式衛生紙(箱)",
+          "itemName": "純喫茶綠茶",
           "qty": 1,
-          "price": 699,
-          "amount": 699,
-          "category": "其它"
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
         },
         {
-          "itemName": "有機高麗菜",
-          "qty": 1,
-          "price": 69,
-          "amount": 69,
-          "category": "其它"
+          "itemName": "洋芋片",
+          "qty": 3,
+          "price": 30,
+          "amount": 90,
+          "category": "飲食"
         }
       ]
     },
     {
-      "invNum": "ZP10000079",
-      "invDate": "2026/01/12",
-      "invTime": "08:54:52",
-      "date": "2026-01-12",
+      "invNum": "RA10000081",
+      "invDate": "2026/03/04",
+      "invTime": "05:22:22",
+      "date": "2026-03-04",
       "sellerName": "康是美大安店",
       "sellerBan": "44332211",
-      "amount": 150,
+      "amount": 143,
       "invStatus": "已開立",
-      "invPeriod": "11502",
+      "invPeriod": "11504",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "IX10000088",
+      "invDate": "2026/03/02",
+      "invTime": "09:53:34",
+      "date": "2026-03-02",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 299,
+      "invStatus": "已開立",
+      "invPeriod": "11504",
       "timePeriod": "早餐 (06-11)",
       "weekday": "週一",
       "isRefund": false,
       "items": [
         {
-          "itemName": "醫用口罩(50入)",
+          "itemName": "鮮乳",
+          "qty": 2,
+          "price": 95,
+          "amount": 190,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
           "qty": 1,
-          "price": 150,
-          "amount": 150,
-          "category": "醫療"
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
         }
       ]
     },
     {
-      "invNum": "CR10000046",
-      "invDate": "2026/01/11",
-      "invTime": "22:33:03",
-      "date": "2026-01-11",
-      "sellerName": "燦坤3C南京東路店",
-      "sellerBan": "55667788",
-      "amount": 890,
+      "invNum": "SS10000089",
+      "invDate": "2026/03/01",
+      "invTime": "13:56:45",
+      "date": "2026-03-01",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 279,
       "invStatus": "已開立",
-      "invPeriod": "11502",
-      "timePeriod": "深夜 (21-06)",
+      "invPeriod": "11504",
+      "timePeriod": "午餐 (11-14)",
       "weekday": "週日",
       "isRefund": false,
       "items": [
         {
-          "itemName": "Type-C Hub 轉接器",
+          "itemName": "吐司",
+          "qty": 3,
+          "price": 45,
+          "amount": 135,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
           "qty": 1,
-          "price": 890,
-          "amount": 890,
-          "category": "3C配件"
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
         }
       ]
     },
     {
-      "invNum": "FG10000060",
-      "invDate": "2026/01/11",
-      "invTime": "13:01:38",
-      "date": "2026-01-11",
-      "sellerName": "全家便利商店股份有限公司",
-      "sellerBan": "88776655",
-      "amount": 371,
+      "invNum": "FB10000030",
+      "invDate": "2026/02/28",
+      "invTime": "21:25:28",
+      "date": "2026-02-28",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 189,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "AF10000065",
+      "invDate": "2026/02/28",
+      "invTime": "08:06:59",
+      "date": "2026-02-28",
+      "sellerName": "麥當勞台北重慶店",
+      "sellerBan": "77665544",
+      "amount": 365,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "FL10000093",
+      "invDate": "2026/02/26",
+      "invTime": "17:46:33",
+      "date": "2026-02-26",
+      "sellerName": "統一超商股份有限公司第六分公司",
+      "sellerBan": "22334455",
+      "amount": 175,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 3,
+          "price": 35,
+          "amount": 105,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "LY10000071",
+      "invDate": "2026/02/20",
+      "invTime": "13:15:39",
+      "date": "2026-02-20",
+      "sellerName": "爭鮮迴轉壽司板橋店",
+      "sellerBan": "77889900",
+      "amount": 180,
       "invStatus": "已開立",
       "invPeriod": "11502",
       "timePeriod": "午餐 (11-14)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 3,
+          "price": 35,
+          "amount": 105,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 3,
+          "price": 25,
+          "amount": 75,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "ND10000036",
+      "invDate": "2026/02/19",
+      "invTime": "06:55:31",
+      "date": "2026-02-19",
+      "sellerName": "台灣高速鐵路股份有限公司",
+      "sellerBan": "55443322",
+      "amount": 172,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "CN10000077",
+      "invDate": "2026/02/13",
+      "invTime": "23:59:16",
+      "date": "2026-02-13",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 400,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "SE10000011",
+      "invDate": "2026/02/13",
+      "invTime": "19:26:50",
+      "date": "2026-02-13",
+      "sellerName": "家樂福桂林店",
+      "sellerBan": "99001122",
+      "amount": 104,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 3,
+          "price": 13,
+          "amount": 39,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "WA10000062",
+      "invDate": "2026/02/11",
+      "invTime": "06:26:46",
+      "date": "2026-02-11",
+      "sellerName": "台鐵便當台北車站店",
+      "sellerBan": "22113344",
+      "amount": 250,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 3,
+          "price": 45,
+          "amount": 135,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "IE10000004",
+      "invDate": "2026/02/10",
+      "invTime": "15:23:12",
+      "date": "2026-02-10",
+      "sellerName": "康是美大安店",
+      "sellerBan": "44332211",
+      "amount": 193,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "AJ10000058",
+      "invDate": "2026/02/08",
+      "invTime": "19:51:51",
+      "date": "2026-02-08",
+      "sellerName": "Steam 數位娛樂",
+      "sellerBan": "44556677",
+      "amount": 125,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
       "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "御飯糰",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "DT10000015",
+      "invDate": "2026/02/06",
+      "invTime": "09:38:38",
+      "date": "2026-02-06",
+      "sellerName": "Steam 數位娛樂",
+      "sellerBan": "44556677",
+      "amount": 65,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "ZE10000056",
+      "invDate": "2026/02/03",
+      "invTime": "23:11:47",
+      "date": "2026-02-03",
+      "sellerName": "蝦皮購物-樂購蝦皮",
+      "sellerBan": "33445566",
+      "amount": 399,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "YE10000026",
+      "invDate": "2026/02/02",
+      "invTime": "17:18:16",
+      "date": "2026-02-02",
+      "sellerName": "Steam 數位娛樂",
+      "sellerBan": "44556677",
+      "amount": 35,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "IX10000059",
+      "invDate": "2026/02/02",
+      "invTime": "01:31:22",
+      "date": "2026-02-02",
+      "sellerName": "康是美大安店",
+      "sellerBan": "44332211",
+      "amount": 357,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 3,
+          "price": 89,
+          "amount": 267,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "TE10000053",
+      "invDate": "2026/01/30",
+      "invTime": "03:53:49",
+      "date": "2026-01-30",
+      "sellerName": "威秀影城信義店",
+      "sellerBan": "66554433",
+      "amount": 89,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週五",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "TG10000000",
+      "invDate": "2026/01/29",
+      "invTime": "00:54:38",
+      "date": "2026-01-29",
+      "sellerName": "台灣高速鐵路股份有限公司",
+      "sellerBan": "55443322",
+      "amount": 300,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 3,
+          "price": 55,
+          "amount": 165,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 3,
+          "price": 30,
+          "amount": 90,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "FU10000082",
+      "invDate": "2026/01/28",
+      "invTime": "15:28:44",
+      "date": "2026-01-28",
+      "sellerName": "台鐵便當台北車站店",
+      "sellerBan": "22113344",
+      "amount": 170,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "礦泉水",
+          "qty": 3,
+          "price": 20,
+          "amount": 60,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "HQ10000009",
+      "invDate": "2026/01/26",
+      "invTime": "13:50:23",
+      "date": "2026-01-26",
+      "sellerName": "麥當勞台北重慶店",
+      "sellerBan": "77665544",
+      "amount": 345,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "午餐 (11-14)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 3,
+          "price": 20,
+          "amount": 60,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "KI10000035",
+      "invDate": "2026/01/26",
+      "invTime": "02:12:24",
+      "date": "2026-01-26",
+      "sellerName": "屈臣氏南京店",
+      "sellerBan": "33221100",
+      "amount": 380,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週一",
       "isRefund": false,
       "items": [
         {
@@ -2849,10 +3037,114 @@
           "category": "飲食"
         },
         {
-          "itemName": "純喫茶綠茶",
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "吐司",
+          "qty": 2,
+          "price": 45,
+          "amount": 90,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "CW10000005",
+      "invDate": "2026/01/24",
+      "invTime": "13:49:57",
+      "date": "2026-01-24",
+      "sellerName": "燦坤3C南京東路店",
+      "sellerBan": "55667788",
+      "amount": 35,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "午餐 (11-14)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "RF10000078",
+      "invDate": "2026/01/24",
+      "invTime": "08:33:04",
+      "date": "2026-01-24",
+      "sellerName": "星巴克咖啡台北南京店",
+      "sellerBan": "11223344",
+      "amount": 506,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "茶葉蛋",
+          "qty": 2,
+          "price": 13,
+          "amount": 26,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
           "qty": 3,
-          "price": 25,
-          "amount": 75,
+          "price": 55,
+          "amount": 165,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 3,
+          "price": 95,
+          "amount": 285,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "WD10000017",
+      "invDate": "2026/01/24",
+      "invTime": "01:42:55",
+      "date": "2026-01-24",
+      "sellerName": "台灣高速鐵路股份有限公司",
+      "sellerBan": "55443322",
+      "amount": 135,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週六",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
           "category": "飲食"
         },
         {
@@ -2861,12 +3153,328 @@
           "price": 35,
           "amount": 105,
           "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "VZ10000025",
+      "invDate": "2026/01/22",
+      "invTime": "17:41:39",
+      "date": "2026-01-22",
+      "sellerName": "Steam 數位娛樂",
+      "sellerBan": "44556677",
+      "amount": 30,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週四",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "JN10000066",
+      "invDate": "2026/01/18",
+      "invTime": "10:09:45",
+      "date": "2026-01-18",
+      "sellerName": "新光三越信義A11",
+      "sellerBan": "11002299",
+      "amount": 13,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "KY10000045",
+      "invDate": "2026/01/18",
+      "invTime": "08:33:48",
+      "date": "2026-01-18",
+      "sellerName": "燦坤3C南京東路店",
+      "sellerBan": "55667788",
+      "amount": 90,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "小美冰淇淋",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "RU10000008",
+      "invDate": "2026/01/18",
+      "invTime": "01:40:06",
+      "date": "2026-01-18",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 25,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "WB10000031",
+      "invDate": "2026/01/18",
+      "invTime": "01:08:37",
+      "date": "2026-01-18",
+      "sellerName": "星巴克咖啡台北南京店",
+      "sellerBan": "11223344",
+      "amount": 123,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
         },
         {
           "itemName": "茶葉蛋",
-          "qty": 2,
+          "qty": 1,
           "price": 13,
-          "amount": 26,
+          "amount": 13,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "QV10000055",
+      "invDate": "2026/01/14",
+      "invTime": "03:21:37",
+      "date": "2026-01-14",
+      "sellerName": "統一超商股份有限公司第六分公司",
+      "sellerBan": "22334455",
+      "amount": 13,
+      "invStatus": "已作廢",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週三",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "GW10000083",
+      "invDate": "2026/01/13",
+      "invTime": "20:17:40",
+      "date": "2026-01-13",
+      "sellerName": "蝦皮購物-樂購蝦皮",
+      "sellerBan": "33445566",
+      "amount": 45,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "晚餐 (17-21)",
+      "weekday": "週二",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 1,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "NZ10000006",
+      "invDate": "2026/01/12",
+      "invTime": "16:43:37",
+      "date": "2026-01-12",
+      "sellerName": "家樂福桂林店",
+      "sellerBan": "99001122",
+      "amount": 335,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "下午茶 (14-17)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "吐司",
+          "qty": 3,
+          "price": 45,
+          "amount": 135,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 3,
+          "price": 25,
+          "amount": 75,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "ZP10000079",
+      "invDate": "2026/01/12",
+      "invTime": "08:54:52",
+      "date": "2026-01-12",
+      "sellerName": "康是美大安店",
+      "sellerBan": "44332211",
+      "amount": 179,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "早餐 (06-11)",
+      "weekday": "週一",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "御飯糰",
+          "qty": 1,
+          "price": 35,
+          "amount": 35,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
+        },
+        {
+          "itemName": "便當-國民排骨",
+          "qty": 1,
+          "price": 89,
+          "amount": 89,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "CR10000046",
+      "invDate": "2026/01/11",
+      "invTime": "22:33:03",
+      "date": "2026-01-11",
+      "sellerName": "燦坤3C南京東路店",
+      "sellerBan": "55667788",
+      "amount": 90,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "深夜 (21-06)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "洋芋片",
+          "qty": 3,
+          "price": 30,
+          "amount": 90,
+          "category": "飲食"
+        }
+      ]
+    },
+    {
+      "invNum": "FG10000060",
+      "invDate": "2026/01/11",
+      "invTime": "13:01:38",
+      "date": "2026-01-11",
+      "sellerName": "全家便利商店股份有限公司",
+      "sellerBan": "88776655",
+      "amount": 115,
+      "invStatus": "已開立",
+      "invPeriod": "11502",
+      "timePeriod": "午餐 (11-14)",
+      "weekday": "週日",
+      "isRefund": false,
+      "items": [
+        {
+          "itemName": "鮮乳",
+          "qty": 1,
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "礦泉水",
+          "qty": 1,
+          "price": 20,
+          "amount": 20,
           "category": "飲食"
         }
       ]
@@ -2878,7 +3486,7 @@
       "date": "2026-01-10",
       "sellerName": "蝦皮購物-樂購蝦皮",
       "sellerBan": "33445566",
-      "amount": 490,
+      "amount": 175,
       "invStatus": "已開立",
       "invPeriod": "11502",
       "timePeriod": "晚餐 (17-21)",
@@ -2886,11 +3494,25 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "無線滑鼠",
+          "itemName": "鮮乳",
           "qty": 1,
-          "price": 490,
-          "amount": 490,
-          "category": "3C配件"
+          "price": 95,
+          "amount": 95,
+          "category": "飲食"
+        },
+        {
+          "itemName": "純喫茶綠茶",
+          "qty": 1,
+          "price": 25,
+          "amount": 25,
+          "category": "飲食"
+        },
+        {
+          "itemName": "拿鐵咖啡(大)",
+          "qty": 1,
+          "price": 55,
+          "amount": 55,
+          "category": "飲食"
         }
       ]
     },
@@ -2901,7 +3523,7 @@
       "date": "2026-01-09",
       "sellerName": "爭鮮迴轉壽司板橋店",
       "sellerBan": "77889900",
-      "amount": 120,
+      "amount": 70,
       "invStatus": "已開立",
       "invPeriod": "11502",
       "timePeriod": "午餐 (11-14)",
@@ -2909,10 +3531,10 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "一般日常消费",
-          "qty": 1,
-          "price": 120,
-          "amount": 120,
+          "itemName": "御飯糰",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
           "category": "飲食"
         }
       ]
@@ -2924,7 +3546,7 @@
       "date": "2026-01-06",
       "sellerName": "麥當勞台北重慶店",
       "sellerBan": "77665544",
-      "amount": 205,
+      "amount": 158,
       "invStatus": "已開立",
       "invPeriod": "11502",
       "timePeriod": "晚餐 (17-21)",
@@ -2932,17 +3554,31 @@
       "isRefund": false,
       "items": [
         {
-          "itemName": "大麥克經典套餐",
-          "qty": 1,
-          "price": 140,
-          "amount": 140,
+          "itemName": "小美冰淇淋",
+          "qty": 2,
+          "price": 35,
+          "amount": 70,
           "category": "飲食"
         },
         {
-          "itemName": "薯條(大)",
+          "itemName": "吐司",
           "qty": 1,
-          "price": 65,
-          "amount": 65,
+          "price": 45,
+          "amount": 45,
+          "category": "飲食"
+        },
+        {
+          "itemName": "洋芋片",
+          "qty": 1,
+          "price": 30,
+          "amount": 30,
+          "category": "飲食"
+        },
+        {
+          "itemName": "茶葉蛋",
+          "qty": 1,
+          "price": 13,
+          "amount": 13,
           "category": "飲食"
         }
       ]

@@ -21,20 +21,20 @@ def run_browser_automation():
     os.makedirs("data", exist_ok=True)
     
     print("\n" + "="*70)
-    print(" === 財政部電子發票大平台 - 半自動網頁爬蟲系統 ===")
+    print(" === 財政部電子發票大平台 - 全自動接手下載爬蟲系統 ===")
     print("="*70)
     
     if use_mock:
         print("[說明] 當前設定為 Mock 模擬模式。")
-        print("       如果您希望透過真實網頁下載 CSV 檔案，請將 config.json 中的 useMock 改為 false。")
-        print("       現在腳本仍會開啟瀏覽器供您體驗登入與操作。")
+        print("       如果您希望進行真實網頁全自動下載，請將 config.json 中的 useMock 改為 false。")
+        print("       現在腳本仍會開啟新版登入頁面供您體驗。")
         print("-"*70)
 
     print("[提示] 正在初始化 Playwright 瀏覽器核心...")
     
     with sync_playwright() as p:
-        # 啟動 headed 模式瀏覽器以供使用者手動操作與輸入驗證碼
         try:
+            # 啟動 headed 模式瀏覽器以供使用者手動操作與輸入驗證碼
             browser = p.chromium.launch(headless=False, args=["--start-maximized"])
         except Exception as e:
             print(f"\n[錯誤] 無法啟動 Chromium 瀏覽器: {e}")
@@ -54,17 +54,16 @@ def run_browser_automation():
         # 直接進入新版消費者統一登入入口
         page.goto("https://www.einvoice.nat.gov.tw/accounts/login/mw")
         
-        # 等待網頁載入
         page.wait_for_timeout(3000)
         
-        # 嘗試自動填寫手機號碼與驗證碼 (密碼)
-        # 由於財政部網頁可能包含 frame 或特定的 selector，我們嘗試使用多種常見的 selector
+        # 嘗試自動填寫手機號碼與驗證碼
         print("[爬蟲] 嘗試為您自動填入登入欄位...")
         try:
             # 搜尋手機號碼輸入框
             phone_selectors = [
                 "input[name*='phone']", "input[name*='mobile']", "input[id*='phone']", 
-                "input[id*='mobile']", "input[placeholder*='手機']", "input[placeholder*='帳號']"
+                "input[id*='mobile']", "input[placeholder*='手機']", "input[placeholder*='帳號']",
+                "input[id*='username']", "input[name*='username']"
             ]
             phone_filled = False
             for sel in phone_selectors:
@@ -74,10 +73,10 @@ def run_browser_automation():
                         phone_filled = True
                         break
             
-            # 搜尋驗證碼密碼輸入框
+            # 搜尋密碼輸入框
             pwd_selectors = [
                 "input[type='password']", "input[name*='pwd']", "input[name*='encrypt']",
-                "input[placeholder*='驗證碼']", "input[placeholder*='密碼']"
+                "input[placeholder*='驗證碼']", "input[placeholder*='密碼']", "input[id*='password']"
             ]
             pwd_filled = False
             for sel in pwd_selectors:
@@ -90,31 +89,139 @@ def run_browser_automation():
             if phone_filled and pwd_filled:
                 print("[成功] 已成功自動填入您的手機號碼與密碼！")
             else:
-                print("[提示] 未偵測到預填資訊或使用預設範例，請在瀏覽器中手動點擊並輸入您的帳密。")
+                print("[提示] 未偵測到預填資訊或使用預設範例，請在瀏覽器中手動填入您的帳號與密碼。")
         except Exception as ex:
-            # 即使填寫失敗也不影響使用者手動操作
             print(f"[提示] 欄位預填略過: {ex}")
             
         print("\n" + "*"*65)
-        print(" >>> 請在打開的瀏覽器視窗中完成以下「手動操作」：")
-        print("   1. 輸入圖形驗證碼，並點選『登入』。")
-        print("   2. 登入後，點選選單『載具消費發票查詢』(消費發票彙整/查詢)。")
-        print("   3. 選擇您想查詢的日期範圍（如：2026/01/01 至 2026/05/29）。")
-        print("   4. 點擊『查詢』並點選『下載 CSV 檔案』(或匯出 CSV)。")
-        print("   5. 下載成功後，將該 CSV 檔案移動或複製到專案根目錄的 `data/` 資料夾下。")
-        print("      (不需重新命名！腳本會自動偵測 `data/` 目錄下的任何 CSV 檔案。)")
+        print(" >>> 請在瀏覽器視窗中完成以下動作：")
+        print("     1. 手動輸入「圖形驗證碼」。")
+        print("     2. 點選「登入」按鈕。")
+        print(" 📢 [提示] 登入成功後，機器人將「自動接手」進行選單點擊與發票下載！")
         print("*"*65 + "\n")
         
-        # 暫停腳本，等待使用者手動下載並放置 CSV
-        print("📢 腳本目前處於暫停狀態，等待您在網頁上操作下載...")
-        input(">>> 當您下載好 CSV 檔案並放入 `data/` 資料夾後，請回到此處按下 [Enter] 鍵繼續...")
+        # 1. 偵測登入成功 (等待 URL 重定向)
+        print("[爬蟲] 正在偵測登入狀態，請輸入圖形驗證碼並手動點擊「登入」...")
+        logged_in = False
+        for _ in range(300): # 最多等待 5 分鐘
+            if page.is_closed():
+                break
+            current_url = page.url
+            # 登入成功後 URL 會轉移，不再是 accounts/login/mw 或含有 login_challenge
+            if "login" not in current_url and "accounts/login" not in current_url:
+                logged_in = True
+                break
+            page.wait_for_timeout(1000)
+            
+        if not logged_in or page.is_closed():
+            print("[爬蟲] 未偵測到登入，或瀏覽器已關閉。腳本退出。")
+            return
+
+        print("[爬蟲] 偵測到登入成功！機器人正在接管瀏覽器...")
+        page.wait_for_timeout(3000) # 等待登入後首頁載入完成
         
-        print("\n[爬蟲] 收到確認指令！正在關閉瀏覽器視窗...")
+        # 2. 自動點選『載具消費發票查詢』選單
+        print("[爬蟲] 正在尋找發票查詢選單...")
+        menu_clicked = False
+        try:
+            # 優先搜尋左側選單的文字連結
+            menu_selectors = [
+                "text=載具消費發票查詢", "text=發票查詢與捐贈", 
+                "a:has-text('載具消費')", "a:has-text('發票查詢')"
+            ]
+            for sel in menu_selectors:
+                locator = page.locator(sel)
+                if locator.count() > 0 and locator.first.is_visible():
+                    locator.first.click()
+                    print("[爬蟲] [OK] 已自動點選『載具消費發票查詢』選單。")
+                    menu_clicked = True
+                    break
+            
+            if not menu_clicked:
+                print("[提示] 找不到選單元素，請您手動點擊瀏覽器左側的『載具消費發票查詢』...")
+                page.wait_for_selector("text=載具消費發票查詢", timeout=30000)
+                page.locator("text=載具消費發票查詢").first.click()
+                print("[爬蟲] 已手動點擊引導，接手進行。")
+        except Exception as e:
+            print(f"[提示] 自動點選選單略過，請手動在網頁點擊『載具消費發票查詢』: {e}")
+            
+        page.wait_for_timeout(2000) # 等待查詢頁面載入
+        
+        # 3. 自動設定日期範圍並點選查詢
+        print("[爬蟲] 正在設定查詢條件...")
+        query_success = False
+        try:
+            start_date_str = "2026/01/01"
+            end_date_str = "2026/05/29"
+            
+            # 尋找開始日期輸入框
+            start_input = page.locator("input[name*='start'], input[id*='start'], input[placeholder*='開始'], input[placeholder*='起始']").first
+            if start_input.is_visible():
+                start_input.click()
+                page.keyboard.press("Control+A")
+                page.keyboard.press("Backspace")
+                start_input.fill(start_date_str)
+                print(f"[爬蟲] 已自動填入開始日期: {start_date_str}")
+                
+            # 尋找結束日期輸入框
+            end_input = page.locator("input[name*='end'], input[id*='end'], input[placeholder*='結束']").first
+            if end_input.is_visible():
+                end_input.click()
+                page.keyboard.press("Control+A")
+                page.keyboard.press("Backspace")
+                end_input.fill(end_date_str)
+                print(f"[爬蟲] 已自動填入結束日期: {end_date_str}")
+                
+            # 尋找並點擊查詢按鈕
+            query_btn = page.locator("button:has-text('查詢'), input[type='button'][value='查詢'], input[type='submit'][value='查詢'], a:has-text('查詢')").first
+            if query_btn.is_visible():
+                query_btn.click()
+                print("[爬蟲] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
+                page.wait_for_timeout(4000)
+                query_success = True
+            else:
+                print("[提示] 找不到自動查詢按鈕，請在瀏覽器中點擊『查詢』...")
+        except Exception as e:
+            print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")
+            
+        # 4. 自動攔截並下載發票 CSV 檔案
+        print("[爬蟲] 正在尋找 CSV 下載按鈕...")
+        download_success = False
+        try:
+            # 等待下載按鈕出現
+            download_btn = page.locator("button:has-text('下載'), button:has-text('匯出'), input[value*='下載'], input[value*='匯出'], a:has-text('下載'), a:has-text('匯出'), text=下載明細CSV").first
+            
+            if download_btn.is_visible():
+                print("[爬蟲] 偵測到下載按鈕！啟動自動下載攔截器...")
+                with page.expect_download(timeout=15000) as download_info:
+                    download_btn.click()
+                download = download_info.value
+                
+                # 自動存檔至 data/invoices.csv
+                target_path = os.path.join("data", "invoices.csv")
+                download.save_as(target_path)
+                print(f"[成功] [OK] 發票明細 CSV 檔案已自動下載並儲存至: {target_path}")
+                download_success = True
+                page.wait_for_timeout(2000)
+            else:
+                print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載明細 CSV』或『匯出 CSV』...")
+        except Exception as e:
+            print(f"[提示] 自動下載失敗，請手動在瀏覽器下載 CSV，並放入專案的 `data/` 目錄中: {e}")
+            
+        if not download_success:
+            print("\n" + "="*70)
+            print(" 👉 機器人自動化下載受阻，請手動在瀏覽器完成下載動作：")
+            print("   1. 請手動在瀏覽器下載您的發票 CSV 明細檔。")
+            print("   2. 將下載的 CSV 檔案移至專案目錄的 `data/` 資料夾下。")
+            print("="*70 + "\n")
+            input(">>> 當您「手動下載好 CSV」並放入 `data/` 資料夾後，請回到此處按下 [Enter] 鍵繼續...")
+            
+        print("\n[爬蟲] 流程完成！正在關閉瀏覽器...")
         context.close()
         browser.close()
         
     print("[爬蟲] 瀏覽器已安全關閉。")
-    print("[爬蟲] 正在啟動 Pandas 資料洗滌模組進行檔案處理與儀表板更新...")
+    print("[爬蟲] 正在啟動 Pandas 資料洗滌模組進行處理與更新...")
     
     # 呼叫資料清洗模組
     import data_cleaner

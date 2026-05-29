@@ -1171,10 +1171,10 @@ function App() {
                         
                         <div className="invoice-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
                           <span className="invoice-amount-display refund" style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1.1rem' }}>
-                            -{formatCurrency(Math.abs(inv.amount))}
+                            {formatCurrency(inv.items.filter(item => item.amount < 0).reduce((sum, item) => sum + item.amount, 0))}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            <span>含 {inv.items.length} 項退貨品項</span>
+                            <span>含 {inv.items.filter(item => item.amount < 0).length} 項退貨品項</span>
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                           </div>
                         </div>
@@ -1203,7 +1203,7 @@ function App() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {inv.items.map((item, itemIdx) => (
+                                {inv.items.filter(item => item.amount < 0).map((item, itemIdx) => (
                                   <tr key={itemIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                     <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
                                       {item.itemName}
@@ -1215,7 +1215,7 @@ function App() {
                                       {formatCurrency(item.price)}
                                     </td>
                                     <td style={{ padding: '0.65rem', textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>
-                                      -{formatCurrency(Math.abs(item.amount))}
+                                      {formatCurrency(item.amount)}
                                     </td>
                                     <td style={{ padding: '0.65rem 0 0.65rem 0.5rem', textAlign: 'center' }}>
                                       <span style={{ 

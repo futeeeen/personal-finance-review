@@ -679,7 +679,7 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
             "invPeriod": first_row["invPeriod"],
             "timePeriod": first_row["time_period"],
             "weekday": first_row["weekday_zh"],
-            "isRefund": bool(group["itemAmount"].sum() < 0),
+            "isRefund": bool(group["is_refund"].any()),
             "items": items
         })
         

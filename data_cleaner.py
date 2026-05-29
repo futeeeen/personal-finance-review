@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import re
 import json
@@ -41,6 +42,23 @@ def parse_taiwan_date(date_str):
     except Exception as e:
         return pd.NaT
 
+_custom_rules_cache = None
+
+def get_custom_rules():
+    global _custom_rules_cache
+    if _custom_rules_cache is None:
+        try:
+            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+            if os.path.exists(config_path):
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+                    _custom_rules_cache = config.get("custom_category_rules", {})
+            else:
+                _custom_rules_cache = {}
+        except Exception:
+            _custom_rules_cache = {}
+    return _custom_rules_cache
+
 def classify_item(item_desc, seller_name):
     """
     利用品項描述與商家名稱，自動進行消費分類標籤標記。
@@ -49,35 +67,13 @@ def classify_item(item_desc, seller_name):
     desc = str(item_desc).lower()
     seller = str(seller_name).lower()
     
-    # 1. 飲食分類 (Food & Beverage)
-    food_kws = [
-        # 主食與餐點
-        '便當', '燒肉', '飯', '麵', '拉麵', '涼麵', '炒麵', '壽司', '手卷', '茶碗蒸', '湯包', '小籠包',
-        '水餃', '鍋貼', '堡', '漢堡', '起司堡', '三明治', '吐司', '麵包', '披薩', 'pizza', '章魚燒',
-        '沙拉', '烤雞', '炸雞', '雞塊', '鷄塊', '雞排', '雞腿', '雞肉', '雞翅', '雞軟骨', '烤肉', '燒烤',
-        '火鍋', '鍋物', '壽喜燒', '套餐', '餐點', '特餐', '分享餐', '餐費', '餐飲', '料理', '食',
-        # 飲料與水
-        '茶', '紅茶', '綠茶', '奶茶', '青茶', '包種', '普洱', '烏龍', '拿鐵', '咖啡', '飲品', '飲料',
-        '果汁', '優格', '優酪', '鮮乳', '牛奶', '水', '礦泉水', '可樂', '汽水',
-        # 甜點與點心
-        '蛋糕', '提拉米蘇', '麻糬', '泡芙', '甜甜圈', '雪糕', '冰淇淋', '蛋捲冰', '冰', '巧克力',
-        '布丁', '舒芙蕾', '洋芋片', '薯條', '仙貝', '零食', '餅乾',
-        # 早餐與食材
-        '蛋餅', '茶葉蛋', '酸辣湯', '蔬菜', '水果', '蘋果', '香蕉', '鮮食促', '友善食光', '珍食',
-        # 服務費 (通常是餐廳或外送)
-        '服務費', '服務費用', '訂餐服務費'
-    ]
-    food_sellers = [
-        '星巴克', 'starbucks', '麥當勞', 'mcdonald', '爭鮮', '壽司郎', 'sushiro', '鬍子兄弟', '都城實業', 
-        '作燴餐飲', '丰呈馭食', '漫時', '富利餐飲', '必勝客', '肯德基', 'kfc', '摩斯', 'mos', '黛比澍', 
-        '百變全球', '龍角', '景美茶行', '拾汣茶屋', '先喝道', '約翰紅茶', '一青苑', '茶之魔手', '萬波', 
-        'comebuy', '珍煮丹', '甘蔗媽媽', '鳥人拉麵', '湯包', '餐館', '小吃', '食堂', '咖啡', '茶飲',
-        '超商', '便利商店', '全家', '統一超商', '萊爾富', 'ok超商', '美廉社'
-    ]
-    if any(kw in desc for kw in food_kws) or any(kw in seller for kw in food_sellers):
-        return '飲食'
-        
-    # 2. 交通分類 (Transportation)
+    # 0. 先檢查自訂分類規則 (由 config.json 提供，支援動態擴展，避免「其它」佔比越來越多)
+    custom_rules = get_custom_rules()
+    for category, keywords in custom_rules.items():
+        if any(str(kw).lower() in desc for kw in keywords) or any(str(kw).lower() in seller for kw in keywords):
+            return category
+
+    # 1. 交通分類 (Transportation) - 優先度高，具體明確
     trans_kws = [
         '高鐵', '台鐵', '火車', '車票', '乘車票', '悠遊卡', '捷運', '客運', '公車', '計程車', 
         'uber', 'yoxi', '汽油', '無鉛', '柴油', '加油', '充電', '車'
@@ -88,8 +84,43 @@ def classify_item(item_desc, seller_name):
     ]
     if any(kw in desc for kw in trans_kws) or any(kw in seller for kw in trans_sellers):
         return '交通'
-        
-    # 3. 娛樂分類 (Entertainment & Hobby)
+
+    # 2. 醫療分類 (Medical & Personal Care) - 優先度高，具體明確
+    med_kws = [
+        '口罩', '維他命', '維生素', '益生菌', '防曬', '洗面', '藥', '感冒', '診所', '掛號費', 
+        '藥水', '保健食品', '衛生套', '避孕套', '杜蕾斯', 'durex', '岡本', 'okamoto', '滴劑', 
+        '眼藥水', '貼布', '棉花棒'
+    ]
+    med_sellers = [
+        '藥局', '診所', '醫院', '康是美', '屈臣氏', 'watsons', 'cosmed', '大樹藥局', '杏一', 
+        '佑全', '丁丁'
+    ]
+    if any(kw in desc for kw in med_kws) or any(kw in seller for kw in med_sellers):
+        return '醫療'
+
+    # 3. 3C配件分類 (Electronics & Accessories) - 優先度高，避免與食物中「蘋果」或「殼」衝突
+    electronics_kws = [
+        'iphone', 'ipad', 'macbook', '華碩', 'asus', '快充', '傳輸線', '充電線', '滑鼠', 
+        '鍵盤', 'type-c', 'hub', '轉接', '行動電源', '手機', '電腦', '相機', '耳機', '螢幕', 
+        '隨身碟', '記憶卡', '電池', '延長線', '插頭', '線材', '記憶體', '硬碟'
+    ]
+    electronics_sellers = ['燦坤', '順發', 'apple', '小米', '光華', '三創', '良興', '地標網通']
+    if any(kw in desc for kw in electronics_kws) or any(kw in seller for kw in electronics_sellers):
+        return '3C配件'
+
+    # 4. 服飾分類 (Clothing & Fashion) - 優先度高，避免「牛仔」被誤判為飲食中的「牛」
+    cloth_kws = [
+        '短t', 't恤', '襯衫', '外套', '刷毛', '大衣', '洋裝', '褲子', '牛仔褲', '裙子', 
+        '鞋子', '運動鞋', '皮鞋', '皮夾', '包包', '背包', '皮帶', '眼鏡', '襪子', '衣'
+    ]
+    cloth_sellers = [
+        'uniqlo', 'zara', '無印良品', 'net', 'h&m', 'gap', 'adidas', 'nike', 'puma', 
+        '新光三越', 'sogo', '微風', '遠東', '三井不動產', '美麗華', 'outlet'
+    ]
+    if any(kw in desc for kw in cloth_kws) or any(kw in seller for kw in cloth_sellers):
+        return '服飾'
+
+    # 5. 娛樂分類 (Entertainment & Hobby)
     ent_kws = [
         '電影', '影城', '吉伊卡哇', 'chiikawa', '寶可夢', '卡牌', '玩具', '吊飾', '玩偶', 
         '底片', '沖洗', '照片', '相片', '遊戲', 'steam', 'hades', 'cyberpunk', 'switch', 
@@ -102,42 +133,42 @@ def classify_item(item_desc, seller_name):
     ]
     if any(kw in desc for kw in ent_kws) or any(kw in seller for kw in ent_sellers):
         return '娛樂'
-        
-    # 4. 3C配件分類 (Electronics & Accessories)
-    electronics_kws = [
-        'iphone', 'ipad', 'macbook', '華碩', 'asus', '快充', '傳輸線', '充電線', '滑鼠', 
-        '鍵盤', 'type-c', 'hub', '轉接', '行動電源', '手機', '電腦', '相機', '耳機', '螢幕', 
-        '隨身碟', '記憶卡', '電池', '延長線', '插頭', '線材', '記憶體', '硬碟'
+
+    # 6. 飲食分類 (Food & Beverage) - 放在較後方，可使用極具涵蓋率的字根匹配，確保所有遺珠食物一網打盡
+    food_kws = [
+        # 主食與餐點、各類中西式料理字眼
+        '便當', '燒肉', '飯', '麵', '拉麵', '涼麵', '炒麵', '壽司', '手卷', '茶碗蒸', '湯包', '小籠包',
+        '水餃', '鍋貼', '堡', '漢堡', '起司堡', '三明治', '吐司', '麵包', '披薩', 'pizza', '章魚燒',
+        '沙拉', '烤雞', '炸雞', '雞塊', '鷄塊', '雞排', '雞腿', '雞肉', '雞肉飯', '雞翅', '雞軟骨', '烤肉', '燒烤',
+        '火鍋', '鍋物', '壽喜燒', '套餐', '餐點', '特餐', '分享餐', '餐費', '餐飲', '料理', '食',
+        # 高頻單字根食物 (已由上方服飾服裝、3C 配件等過濾，此處可放心使用)
+        '牛', '豬', '雞', '鷄', '羊', '鴨', '鵝', '魚', '蝦', '蟹', '肉', '湯', '菜',
+        '蛋', '筍', '菇', '椒', '豆', '茄', '蒜', '蔥', '瓜', '薯', '蛤', '蚵', '排', '串',
+        # 各種食材與小吃配料
+        '年糕', '豆腐', '豆皮', '甜不辣', '貢丸', '黑輪', '玉子燒', '洋蔥圈', '肋條', '腿排', '滿福', '夾心',
+        # 飲料與水、茶品、甜點、漿凍奶
+        '茶', '紅茶', '綠茶', '奶茶', '青茶', '包種', '普洱', '烏龍', '拿鐵', '咖啡', '飲品', '飲料',
+        '果汁', '優格', '優酪', '鮮乳', '牛奶', '水', '礦泉水', '可樂', '汽水', '冷泡', '冰', '凍',
+        '豆漿', '米漿', '鮮', '乳', '飲', '汁', '漿', '奶',
+        # 甜點與點心
+        '蛋糕', '提拉米蘇', '麻糬', '泡芙', '甜甜圈', '雪糕', '冰淇淋', '蛋捲冰', '巧克力',
+        '布丁', '舒芙蕾', '洋芋片', '薯條', '仙貝', '零食', '餅乾', '糕', '酥', '餅', '糖',
+        # 早餐與食材標記
+        '蛋餅', '茶葉蛋', '酸辣湯', '蔬菜', '水果', '蘋果', '香蕉', '鮮食促', '友善食光', '珍食',
+        # 服務費與外送費 (通常是餐廳或外送平台)
+        '服務費', '服務費用', '訂餐服務費', 'service charge', '外送費', '平台費'
     ]
-    electronics_sellers = ['燦坤', '順發', 'apple', '小米', '光華', '三創', '良興', '地標網通']
-    if any(kw in desc for kw in electronics_kws) or any(kw in seller for kw in electronics_sellers):
-        return '3C配件'
-        
-    # 5. 服飾分類 (Clothing & Fashion)
-    cloth_kws = [
-        '短t', 't恤', '襯衫', '外套', '刷毛', '大衣', '洋裝', '褲子', '牛仔褲', '裙子', 
-        '鞋子', '運動鞋', '皮鞋', '皮夾', '包包', '背包', '皮帶', '眼鏡', '襪子', '衣'
+    food_sellers = [
+        '星巴克', 'starbucks', '麥當勞', 'mcdonald', '爭鮮', '壽司郎', 'sushiro', '鬍子兄弟', '都城實業', 
+        '作燴餐飲', '丰呈馭食', '漫時', '富利餐飲', '必勝客', '肯德基', 'kfc', '摩斯', 'mos', '黛比澍', 
+        '百變全球', '龍角', '景美茶行', '拾汣茶屋', '先喝道', '約翰紅茶', '一青苑', '茶之魔手', '萬波', 
+        'comebuy', '珍煮丹', '甘蔗媽媽', '鳥人拉麵', '湯包', '餐館', '小吃', '食堂', '咖啡', '茶飲',
+        '超商', '便利商店', '全家', '統一超商', '萊爾富', 'ok超商', '美廉社', '餐飲', '餐坊', '麵店', '火鍋',
+        '蹦啾兒', '鬍鬚忠', '豪牛肉湯'
     ]
-    cloth_sellers = [
-        'uniqlo', 'zara', '無印良品', 'net', 'h&m', 'gap', 'adidas', 'nike', 'puma', 
-        '新光三越', 'sogo', '微風', '遠東', '三井不動產', '美麗華', 'outlet'
-    ]
-    if any(kw in desc for kw in cloth_kws) or any(kw in seller for kw in cloth_sellers):
-        return '服飾'
-        
-    # 6. 醫療分類 (Medical & Personal Care)
-    med_kws = [
-        '口罩', '維他命', '維生素', '益生菌', '防曬', '洗面', '藥', '感冒', '診所', '掛號費', 
-        '藥水', '保健食品', '衛生套', '避孕套', '杜蕾斯', 'durex', '岡本', 'okamoto', '滴劑', 
-        '眼藥水', '貼布', '棉花棒'
-    ]
-    med_sellers = [
-        '藥局', '診所', '醫院', '康是美', '屈臣氏', 'watsons', 'cosmed', '大樹藥局', '杏一', 
-        '佑全', '丁丁'
-    ]
-    if any(kw in desc for kw in med_kws) or any(kw in seller for kw in med_sellers):
-        return '醫療'
-        
+    if any(kw in desc for kw in food_kws) or any(kw in seller for kw in food_sellers):
+        return '飲食'
+
     return '其它'
 
 def parse_time_period(hour_str):

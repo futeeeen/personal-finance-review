@@ -423,20 +423,40 @@ function App() {
     return 0;
   });
 
-  // 計算熱力圖最大交易張數，用來換算相對透明度
-  const maxHeatmapCount = heatmap.reduce((max, cell) => cell.count > max ? cell.count : max, 0);
-
-  // 聚合星期熱力圖資料
-  const weekdayData = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'].map(day => {
-    const dayCells = heatmap.filter(c => c.weekday === day);
-    const totalCount = dayCells.reduce((sum, c) => sum + c.count, 0);
-    const totalAmount = dayCells.reduce((sum, c) => sum + c.amount, 0);
-    return {
-      weekday: day,
-      count: totalCount,
-      amount: totalAmount
-    };
+  // 星期熱力圖定義與聚合資料
+  const heatmapCategories = ['飲食', '交通', '娛樂', '3C配件', '服飾', '醫療', '其它', '合計'];
+  const weekdays = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+  
+  // 動態計算 分類 vs 星期 2D 熱力圖格點資料
+  const weekdayCategoryCells = [];
+  heatmapCategories.forEach(cat => {
+    weekdays.forEach(day => {
+      const matches = invoices.filter(inv => {
+        const isMatchDay = inv.weekday === day;
+        if (cat === '合計') {
+          return isMatchDay && inv.invStatus !== '已作廢';
+        } else {
+          const primaryCategory = inv.items[0]?.category || '其它';
+          return isMatchDay && primaryCategory === cat && inv.invStatus !== '已作廢';
+        }
+      });
+      
+      weekdayCategoryCells.push({
+        category: cat,
+        weekday: day,
+        count: matches.length,
+        amount: matches.reduce((sum, inv) => sum + inv.amount, 0)
+      });
+    });
   });
+
+  const maxCategoryCellCount = weekdayCategoryCells
+    .filter(cell => cell.category !== '合計')
+    .reduce((max, cell) => cell.count > max ? cell.count : max, 0);
+
+  const maxTotalCellCount = weekdayCategoryCells
+    .filter(cell => cell.category === '合計')
+    .reduce((max, cell) => cell.count > max ? cell.count : max, 0);
 
   return (
     <div className="dashboard-wrapper">
@@ -781,10 +801,18 @@ function App() {
                 <BarChart
                   data={topSellers}
                   layout="vertical"
-                  margin={{ top: 0, right: 0, left: -25, bottom: 0 }}
+                  margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
                 >
                   <XAxis type="number" stroke="var(--text-muted)" fontSize={9} tickLine={false} />
-                  <YAxis dataKey="sellerShort" type="category" stroke="var(--text-secondary)" fontSize={9} tickLine={false} width={45} />
+                  <YAxis 
+                    dataKey="sellerShort" 
+                    type="category" 
+                    stroke="var(--text-secondary)" 
+                    fontSize={9} 
+                    tickLine={false} 
+                    width={90} 
+                    tickFormatter={(val) => val.length > 7 ? val.substring(0, 6) + '...' : val}
+                  />
                   <ChartTooltip 
                     contentStyle={{ 
                       background: '#0f172a', 
@@ -834,70 +862,96 @@ function App() {
           </div>
         </div>
 
-        {/* 星期熱力圖 */}
+        {/* 分類與星期 2D 熱力圖 */}
         <div className="glass-card">
           <div className="chart-header">
             <h3 className="chart-title">
               <Calendar size={18} />
-              星期消費熱力分佈圖 (週一 至 週日)
+              分類與星期消費熱力圖 (分類 vs 星期)
             </h3>
           </div>
           
-          <div className="heatmap-container" style={{ padding: '1rem 0 0.5rem 0' }}>
-            <div className="heatmap-legend" style={{ marginBottom: '1.25rem' }}>
+          <div className="heatmap-container">
+            <div className="heatmap-legend">
               <span>少交易</span>
               <div className="legend-bar"></div>
               <span>多交易</span>
             </div>
             
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(7, 1fr)', 
-              gap: '0.75rem', 
-              width: '100%',
-              minWidth: '320px'
-            }}>
-              {weekdayData.map((dayData, idx) => {
-                const maxWeekdayCount = Math.max(...weekdayData.map(d => d.count), 1);
-                const opacity = dayData.count > 0 ? (dayData.count / maxWeekdayCount) * 0.8 + 0.15 : 0.05;
-                const hasData = dayData.count > 0;
+            <div className="heatmap-grid-scroll">
+              <div className="heatmap-grid" style={{ gridTemplateRows: 'repeat(9, auto)' }}>
+                {/* 頂部星期標頭 */}
+                <div className="heatmap-header-cell" style={{ fontWeight: 700 }}>分類 \ 星期</div>
+                <div className="heatmap-header-cell">週一</div>
+                <div className="heatmap-header-cell">週二</div>
+                <div className="heatmap-header-cell">週三</div>
+                <div className="heatmap-header-cell">週四</div>
+                <div className="heatmap-header-cell">週五</div>
+                <div className="heatmap-header-cell">週六</div>
+                <div className="heatmap-header-cell">週日</div>
                 
-                return (
-                  <div 
-                    key={idx}
-                    className="heatmap-block"
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem',
-                      height: '80px',
-                      borderRadius: '10px',
-                      backgroundColor: hasData ? `rgba(99, 102, 241, ${opacity})` : 'rgba(255, 255, 255, 0.02)',
-                      color: hasData ? '#fff' : 'rgba(255, 255, 255, 0.2)',
-                      border: hasData ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
-                      cursor: 'pointer',
-                      position: 'relative'
-                    }}
-                  >
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{dayData.weekday}</span>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{dayData.count > 0 ? `${dayData.count}張` : '0張'}</span>
-                    
-                    {/* 懸停工具提示 */}
-                    <div className="heatmap-tooltip">
-                      <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>{dayData.weekday}消費統計</div>
-                      <div>交易張數: {dayData.count} 張</div>
-                      <div>累計金額: {formatCurrency(dayData.amount)}</div>
+                {/* 分類與合計列渲染 */}
+                {heatmapCategories.map((cat, catIdx) => (
+                  <React.Fragment key={catIdx}>
+                    {/* 左側分類標籤 */}
+                    <div 
+                      className="heatmap-label-cell" 
+                      style={{ 
+                        fontWeight: cat === '合計' ? 700 : 500,
+                        color: cat === '合計' ? 'var(--primary)' : 'var(--text-secondary)',
+                        background: cat === '合計' ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                        borderRadius: '4px',
+                        padding: '0.25rem 0.5rem',
+                        fontSize: '0.78rem'
+                      }}
+                    >
+                      {cat}
                     </div>
-                  </div>
-                );
-              })}
+                    
+                    {/* 星期一至日各區塊 */}
+                    {weekdays.map((w, wIdx) => {
+                      const cell = weekdayCategoryCells.find(c => c.weekday === w && c.category === cat) || { count: 0, amount: 0 };
+                      
+                      // 決定最大值進行透明度換算 (合計行與一般分類行分開計算，避免合計行過大導致一般行全白)
+                      const isTotal = cat === '合計';
+                      const maxLimit = isTotal ? maxTotalCellCount : maxCategoryCellCount;
+                      const opacity = maxLimit > 0 ? (cell.count / maxLimit) * 0.8 + 0.15 : 0.06;
+                      const hasData = cell.count > 0;
+                      
+                      return (
+                        <div 
+                          key={wIdx} 
+                          className="heatmap-block"
+                          style={{
+                            backgroundColor: hasData 
+                              ? (isTotal ? `rgba(168, 85, 247, ${opacity})` : `rgba(99, 102, 241, ${opacity})`) 
+                              : 'rgba(255, 255, 255, 0.02)',
+                            color: hasData ? '#fff' : 'rgba(255, 255, 255, 0.15)',
+                            border: hasData 
+                              ? (isTotal ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(99, 102, 241, 0.3)') 
+                              : '1px solid rgba(255, 255, 255, 0.03)',
+                            fontWeight: isTotal ? 700 : 500
+                          }}
+                        >
+                          {cell.count > 0 ? cell.count : ''}
+                          
+                          {/* 懸停工具提示 */}
+                          <div className="heatmap-tooltip">
+                            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>{w} • {cat}</div>
+                            <div>交易張數: {cell.count} 張</div>
+                            <div>累計金額: {formatCurrency(cell.amount)}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
             
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.75rem' }}>
               <Info size={12} />
-              <span>格內數字為該星期的累積發票張數，滑鼠移入各個星期可檢視該日的累計消費總金額與發票數量。</span>
+              <span>格內數字為該星期該類別累積發票張數，滑鼠移入各個格子可檢視該分類於該星期的累計消費總金額與張數。最後一行為「合計」列。</span>
             </div>
           </div>
         </div>

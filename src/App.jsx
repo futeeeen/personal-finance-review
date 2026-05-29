@@ -94,8 +94,17 @@ function App() {
     return `${yyyy}-${mm}-${dd}`;
   };
   
-  // 預設日期區間設為過去六個月（這樣可以載入更多以前的歷史資料！）
-  const [startDate, setStartDate] = useState(getPastDateStr(6));
+  const getEarliestSelectableDateStr = () => {
+    const d = new Date();
+    // 往回推 8 個月，並將日期設為該月第一天，動態計算 9 個月查詢上限，避免硬編碼
+    const targetDate = new Date(d.getFullYear(), d.getMonth() - 8, 1);
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    return `${yyyy}-${mm}-01`;
+  };
+  
+  // 預設日期區間設為大平台支援的最早歷史日期 (動態計算 9 個月前)，確保初次執行拉取最大量歷史資料！
+  const [startDate, setStartDate] = useState(getEarliestSelectableDateStr());
   const [endDate, setEndDate] = useState(getTodayStr());
 
   useEffect(() => {
@@ -508,7 +517,7 @@ function App() {
           <div className="kpi-content">
             <span className="kpi-label">有效發票張數</span>
             <span className="kpi-value">{summary.totalInvoices} 張</span>
-            <span className="kpi-subtext">最近六個月累計載具發票</span>
+            <span className="kpi-subtext">已載入區間累計載具發票</span>
           </div>
         </div>
 

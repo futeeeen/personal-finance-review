@@ -15,12 +15,19 @@ def run_browser_automation():
     import sys
     from datetime import datetime, timedelta
     
-    # 預設起迄日期：結束日期為今天，開始日期為 180 天前（6 個月，大平台單次查詢的極限，保證撈取最大量的歷史資料！）
+    # 預設起迄日期：大平台支援回溯約 9 個月（包含當月），我們動態計算其最早月份的第一天，確保代碼具備未來相容性！
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=180)
-    
-    start_date_str = start_date.strftime("%Y/%m/%d")
     end_date_str = end_date.strftime("%Y/%m/%d")
+    
+    # 往回推 8 個月，並將日期設為該月第一天
+    # 例如當前為 2026/05，回推 8 個月即為 2025/09/01
+    y = end_date.year
+    m = end_date.month - 8
+    while m <= 0:
+        m += 12
+        y -= 1
+    start_date = datetime(y, m, 1)
+    start_date_str = start_date.strftime("%Y/%m/%d")
     
     # 支援以命令列參數傳入 --start YYYY/MM/DD --end YYYY/MM/DD
     for i in range(len(sys.argv)):
@@ -68,6 +75,9 @@ def run_browser_automation():
         context = browser.new_context(viewport={"width": 1440, "height": 900})
         page = context.new_page()
         
+        # 註冊主控台日誌接聽器，以 safe ascii 備用方式印出，防範任何 non-BMP emoji 導致 CP950 崩潰！
+        page.on("console", lambda msg: print(f"[瀏覽器主控台] {msg.text.encode('ascii', 'backslashreplace').decode()}"))
+        
         print("[爬蟲] 正在載入新版財政部電子發票整合服務平台登入頁面...")
         page.goto("https://www.einvoice.nat.gov.tw/accounts/login/mw")
         
@@ -105,6 +115,22 @@ def run_browser_automation():
                 print("[成功] 已成功自動填入您的手機號碼與密碼！")
             else:
                 print("[提示] 未偵測到預填資訊或使用預設範例，請在瀏覽器中手動填入您的帳號與密碼。")
+                
+            # 全自動聚焦並點選圖形驗證碼輸入框，方便使用者直接用鍵盤輸入！
+            captcha_selectors = [
+                "input[placeholder*='圖形']", "input[placeholder*='驗證碼']", 
+                "input[name*='captcha']", "input[id*='captcha']", "input[placeholder*='驗證']"
+            ]
+            for sel in captcha_selectors:
+                try:
+                    loc = page.locator(sel)
+                    if loc.count() > 0 and loc.first.is_visible():
+                        loc.first.focus()
+                        loc.first.click()
+                        print("[成功] 已為您全自動聚焦並點選『圖形驗證碼』輸入框！您可以直接用鍵盤輸入驗證碼。")
+                        break
+                except Exception:
+                    continue
         except Exception as ex:
             print(f"[提示] 欄位預填略過: {ex}")
             
@@ -112,7 +138,7 @@ def run_browser_automation():
         print(" >>> 請在瀏覽器視窗中完成以下動作：")
         print("     1. 手動輸入「圖形驗證碼」。")
         print("     2. 點選「登入」按鈕。")
-        print(" 📢 [提示] 登入成功後，機器人將「自動接手」進行網頁導航、日期輸入與下載！")
+        print(" [提示] 登入成功後，機器人將「自動接手」進行網頁導航、日期輸入與下載！")
         print("*"*65 + "\n")
         
         # 1. 偵測登入成功 (等待 URL 重定向)
@@ -147,146 +173,554 @@ def run_browser_automation():
             except Exception:
                 pass
             
-        # 3. 自動設定日期範圍並點選查詢
-        print("[爬蟲] 正在設定查詢條件...")
-        query_success = False
-        try:
-            # 等待查詢表單動態渲染完成 (最長等待 10 秒)
-            print("[爬蟲] 正在等待查詢表單渲染完成...")
-            page.wait_for_selector("input", timeout=10000)
-            page.wait_for_timeout(1500) # 給予額外穩定時間
-
-            # 移除所有輸入框的 readonly 屬性，確保 Playwright 能 programmatic 直接填入日期！
-            page.evaluate("() => { document.querySelectorAll('input').forEach(el => el.removeAttribute('readonly')); }")
-            page.wait_for_timeout(500)
-
-            # 自適應多重日期輸入框定位器：獲取頁面所有輸入框並進行屬性分析
-            inputs = page.locator("input")
-            date_inputs = []
-            for i in range(inputs.count()):
-                input_el = inputs.nth(i)
-                placeholder = str(input_el.get_attribute("placeholder") or "").lower()
-                name = str(input_el.get_attribute("name") or "").lower()
-                id_attr = str(input_el.get_attribute("id") or "").lower()
-                class_attr = str(input_el.get_attribute("class") or "").lower()
-                
-                # 若包含日期關鍵字，納入處理
-                if any(kw in placeholder or kw in name or kw in id_attr or kw in class_attr 
-                       for kw in ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄']):
-                    page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
-                    date_inputs.append(input_el)
-
-            # 已使用由命令列參數傳入的 start_date_str 與 end_date_str
+        # 3. 處理跨月份查詢 - 將指定起迄日期分割為數個自然月 (因為大平台限制「僅能查詢相同月份」)
+        def split_range_into_months(start_str, end_str):
+            from datetime import datetime
+            import calendar
+            try:
+                start_dt = datetime.strptime(start_str, "%Y/%m/%d")
+                end_dt = datetime.strptime(end_str, "%Y/%m/%d")
+            except Exception:
+                try:
+                    start_dt = datetime.strptime(start_str, "%Y-%m-%d")
+                    end_dt = datetime.strptime(end_str, "%Y-%m-%d")
+                except Exception:
+                    # 降級備用
+                    return [(start_str, end_str)]
             
-            # 情況 A：單一日期範圍輸入框 (如：2026/01/01 ~ 2026/05/29)
-            if len(date_inputs) == 1:
-                date_input = date_inputs[0]
-                date_input.click()
-                page.keyboard.press("Control+A")
-                page.keyboard.press("Backspace")
-                date_range_str = f"{start_date_str} ~ {end_date_str}"
-                date_input.fill(date_range_str)
-                print(f"[爬蟲] [OK] 已自動填入單一日期起迄欄位: {date_range_str}")
-                page.wait_for_timeout(500)
+            ranges = []
+            curr_dt = start_dt
+            while curr_dt <= end_dt:
+                last_day = calendar.monthrange(curr_dt.year, curr_dt.month)[1]
+                month_start = datetime(curr_dt.year, curr_dt.month, 1)
+                actual_start = max(month_start, start_dt)
+                month_end = datetime(curr_dt.year, curr_dt.month, last_day)
+                actual_end = min(month_end, end_dt)
                 
-                # 點擊頁面標題關閉彈出的月曆面板
+                ranges.append((actual_start.strftime("%Y/%m/%d"), actual_end.strftime("%Y/%m/%d")))
+                
+                if curr_dt.month == 12:
+                    curr_dt = datetime(curr_dt.year + 1, 1, 1)
+                else:
+                    curr_dt = datetime(curr_dt.year, curr_dt.month + 1, 1)
+            return ranges
+
+        month_ranges = split_range_into_months(start_date_str, end_date_str)
+        # 逆序排列月份：從這個月開始，漸進式往前一個月抓取歷史資料！
+        month_ranges.reverse()
+        print(f"[爬蟲] 本次任務起迄: {start_date_str} ~ {end_date_str}")
+        print(f"[爬蟲] 配合財政部限制「僅能查詢相同月份」，已將日期自動分割為 {len(month_ranges)} 個月份，並將由新至舊逆序批次下載...")
+        
+        # 清除 data 目錄下的舊 invoices*.csv 發票檔案，防止新舊資料混雜
+        for file_name in os.listdir("data"):
+            if file_name.startswith("invoices") and file_name.endswith(".csv"):
                 try:
-                    page.locator("text=發票查詢及捐贈").first.click()
-                    page.wait_for_timeout(500)
+                    os.remove(os.path.join("data", file_name))
                 except Exception:
                     pass
-            # 情況 B：兩個獨立的起、迄輸入框 (如：[開始日期] [結束日期])
-            elif len(date_inputs) >= 2:
-                # 填入開始日期
-                date_inputs[0].click()
-                page.keyboard.press("Control+A")
-                page.keyboard.press("Backspace")
-                date_inputs[0].fill(start_date_str)
-                print(f"[爬蟲] [OK] 已自動填入開始日期欄位: {start_date_str}")
-                page.wait_for_timeout(500)
-                
-                # 填入結束日期
-                date_inputs[1].click()
-                page.keyboard.press("Control+A")
-                page.keyboard.press("Backspace")
-                date_inputs[1].fill(end_date_str)
-                print(f"[爬蟲] [OK] 已自動填入結束日期欄位: {end_date_str}")
-                page.wait_for_timeout(500)
-                
+
+        # 批次下載各個月份的 CSV 發票
+        any_download_success = False
+        
+        for r_idx, (m_start, m_end) in enumerate(month_ranges):
+            print("\n" + "-" * 60)
+            print(f"[爬蟲] >>> 正在批次下載第 {r_idx + 1}/{len(month_ranges)} 個月份: {m_start} ~ {m_end}")
+            print("-" * 60)
+            
+            # 只有當前頁面不是搜尋頁面時，才導航載入，防範 SPA 重劃/重載導致的 Loading 畫面閃爍與 JS Context 銷毀競態！
+            if "btc502w/search" not in page.url:
                 try:
-                    page.locator("text=發票查詢及捐贈").first.click()
-                    page.wait_for_timeout(500)
-                except Exception:
-                    pass
+                    # 使用 wait_until="networkidle" 確保網頁所有背景連線與轉導完全載入，穩定性極致提升！
+                    page.goto("https://www.einvoice.nat.gov.tw/portal/btc/mobile/btc502w/search", timeout=25000, wait_until="networkidle")
+                    page.wait_for_timeout(1500)
+                except Exception as ge:
+                    print(f"[提示] 重新導航搜尋頁面失敗，將嘗試直接在當前頁面操作: {ge}")
             else:
-                print("[提示] 未能自動定位日期輸入框，將採用網頁預設值（當月）。")
-                
-            # 尋找並點擊查詢按鈕
-            query_btn_selectors = [
-                "button:has-text('查詢')", "input[type='button'][value='查詢']", 
-                "input[type='submit'][value='查詢']", "button[id*='query']", 
-                "button[id*='search']", "text=查詢"
-            ]
+                # 若已在搜尋頁面，給予短暫的物理穩定延遲，確保前一次下載完成後的狀態完全就緒！
+                page.wait_for_timeout(1000)
             
-            query_btn = None
-            for sel in query_btn_selectors:
-                try:
-                    loc = page.locator(sel)
-                    if loc.count() > 0 and loc.first.is_visible():
-                        query_btn = loc.first
-                        break
-                except Exception:
-                    continue
+            query_success = False
+            try:
+                # 等待查詢表單與查詢按鈕動態渲染並完全穩定可見 (最長等待 15 秒)，防範 SPA 路由渲染與非同步水合 race condition！
+                page.wait_for_selector("button:has-text('查詢')", state="visible", timeout=15000)
+                page.wait_for_timeout(1500) # 給予額外穩定時間，確保 Vue 雙向綁定與內部 Model 狀態完全就緒！
+    
+                # 移除所有輸入框的 readonly 屬性
+                page.evaluate("() => { document.querySelectorAll('input').forEach(el => el.removeAttribute('readonly')); }")
+                page.wait_for_timeout(300)
+    
+                # 自適應多重日期輸入框定位器
+                inputs = page.locator("input")
+                date_inputs = []
+                for i in range(inputs.count()):
+                    input_el = inputs.nth(i)
+                    placeholder = str(input_el.get_attribute("placeholder") or "").lower()
+                    name = str(input_el.get_attribute("name") or "").lower()
+                    id_attr = str(input_el.get_attribute("id") or "").lower()
+                    class_attr = str(input_el.get_attribute("class") or "").lower()
                     
-            if query_btn:
-                try:
-                    query_btn.click(timeout=3000)
-                except Exception:
+                    if any(kw in placeholder or kw in name or kw in id_attr or kw in class_attr 
+                           for kw in ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄']):
+                        page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
+                        date_inputs.append(input_el)
+        
+                # 情況 A：單一日期範圍輸入框，採用高度智慧的日曆點選模擬
+                if len(date_inputs) == 1:
+                    from datetime import datetime
                     try:
-                        query_btn.click(force=True, timeout=2000)
+                        start_dt = datetime.strptime(m_start, "%Y/%m/%d")
+                        end_dt = datetime.strptime(m_end, "%Y/%m/%d")
                     except Exception:
-                        query_btn.evaluate("el => el.click()")
-                print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
-                query_success = True
-            else:
-                print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選『查詢』。")
-                page.wait_for_timeout(3000)
-        except Exception as e:
-            print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")
-            
-        # 4. 等待明細發票列表與勾選框載入 (解決新版平台 /detail 頁面跳轉問題)
-        print("[爬蟲] 正在等待查詢發票結果列表載入...")
-        try:
-            page.wait_for_selector("input[type='checkbox']", timeout=15000)
-            page.wait_for_timeout(1500) # 給予 1.5 秒讓表格穩定
-            print(f"[爬蟲] [OK] 發票清單加載成功，當前網址: {page.url}")
-        except Exception as e:
-            print(f"[提示] 等待發票明細表載入超時，將嘗試直接尋找方塊: {e}")
-
-        # 5. 自動勾選所有發票項目 (使用 force=True 強制勾選，避開 Label / Div 攔截指針問題)
-        print("[爬蟲] 正在自動勾選所有發票項目以啟用下載按鈕...")
-        try:
+                        start_dt = datetime.strptime(m_start, "%Y-%m-%d")
+                        end_dt = datetime.strptime(m_end, "%Y-%m-%d")
+                    
+                    target_year = start_dt.year
+                    target_month = start_dt.month
+                    target_start_day = start_dt.day
+                    target_end_day = end_dt.day
+                    
+                    print(f"[爬蟲] 正在全自動模擬點選日曆: {target_year}年{target_month}月 {target_start_day}日 ~ {target_end_day}日...")
+                    
+                    js_script = r"""
+                    async (args) => {
+                        const { startYear, startMonth, startDay, endDay } = args;
+                        
+                        // 定義通用點擊觸發器，防範 SVG/path 元素不繼承 HTMLElement 導致 click() 缺失
+                        const triggerClick = (el) => {
+                            if (!el) return;
+                            if (typeof el.click === 'function') {
+                                el.click();
+                            } else {
+                                el.dispatchEvent(new MouseEvent('click', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    view: window
+                                }));
+                            }
+                        };
+                        
+                        // 1. 尋找日曆的輸入框並點選以彈出日曆視窗
+                        const inputs = Array.from(document.querySelectorAll('input'));
+                        const dateInput = inputs.find(el => {
+                            const placeholder = (el.getAttribute("placeholder") || "").toLowerCase();
+                            const name = (el.getAttribute("name") || "").toLowerCase();
+                            const id = (el.getAttribute("id") || "").toLowerCase();
+                            const className = (el.getAttribute("class") || "").toLowerCase();
+                            return ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄'].some(kw => 
+                                placeholder.includes(kw) || name.includes(kw) || id.includes(kw) || className.includes(kw)
+                            );
+                        });
+                        
+                        if (!dateInput) {
+                            throw new Error("找不到日期輸入框");
+                        }
+                        
+                        // 點擊輸入框開啟日曆
+                        triggerClick(dateInput);
+                        
+                        // 等待日曆視窗顯示 (最多等待 2 秒)
+                        let container = null;
+                        for (let i = 0; i < 20; i++) {
+                            const els = Array.from(document.querySelectorAll('*'));
+                            container = els.find(el => {
+                                const rect = el.getBoundingClientRect();
+                                if (rect.width === 0 || rect.height === 0) return false;
+                                const style = window.getComputedStyle(el);
+                                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                                if (el.tagName !== 'DIV') return false;
+                                const text = el.innerText || "";
+                                return text.includes("週一") && text.includes("週二") && text.includes("週日") && el.querySelectorAll('div').length > 5;
+                            });
+                            if (container) break;
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                        
+                        if (!container) {
+                            throw new Error("找不到彈出的日曆視窗");
+                        }
+                        
+                        // 2. 尋找日曆的前後切換按鈕 (優先支持 Vue Datepicker 類別)
+                        const getNavButtons = (calendarContainer) => {
+                            // 優先嘗試 `@vuepic/vue-datepicker` 標準控制類別 (DevTools 顯示即為此框架)
+                            let prevBtn = calendarContainer.querySelector('.dp__prev_btn');
+                            let nextBtn = calendarContainer.querySelector('.dp__next_btn');
+                            
+                            if (prevBtn && nextBtn) {
+                                return { prevBtn, nextBtn };
+                            }
+                            
+                            // 其次嘗試 Element UI / Plus 等常見框架類別
+                            prevBtn = calendarContainer.querySelector('.el-datepicker__prev-btn, .el-icon-arrow-left');
+                            nextBtn = calendarContainer.querySelector('.el-datepicker__next-btn, .el-icon-arrow-right');
+                            if (prevBtn && nextBtn) {
+                                return { prevBtn, nextBtn };
+                            }
+                            
+                            // 最末級備用：遍歷子元素特徵比對 (注意使用 getAttribute 防止 SVG 元素 className 拋錯)
+                            const children = Array.from(calendarContainer.querySelectorAll('*'));
+                            for (const el of children) {
+                                const text = (el.innerText || "").trim();
+                                const className = el.getAttribute('class') || "";
+                                const isPrev = text === '<' || text === '‹' || text === '«' || 
+                                               className.includes('prev') || className.includes('left') || 
+                                               className.includes('arrow-left') || className.includes('chevron-left');
+                                const isNext = text === '>' || text === '›' || text === '»' || 
+                                               className.includes('next') || className.includes('right') || 
+                                               className.includes('arrow-right') || className.includes('chevron-right');
+                                if (isPrev && !prevBtn) prevBtn = el;
+                                if (isNext) nextBtn = el;
+                            }
+                            
+                            if (!prevBtn || !nextBtn) {
+                                const buttons = Array.from(calendarContainer.querySelectorAll('button, span, i, div')).filter(el => {
+                                    const rect = el.getBoundingClientRect();
+                                    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).cursor === 'pointer';
+                                });
+                                if (buttons.length >= 2) {
+                                    prevBtn = buttons[0];
+                                    nextBtn = buttons[buttons.length - 1];
+                                }
+                            }
+                            return { prevBtn, nextBtn };
+                        };
+                        
+                        const getDisplayedYearMonth = (calendarContainer) => {
+                            const text = calendarContainer.innerText || "";
+                            const yearMatch = text.match(/(\d{4})年?/);
+                            const monthMatch = text.match(/(\d{1,2})月/);
+                            if (yearMatch && monthMatch) {
+                                return {
+                                    year: parseInt(yearMatch[1], 10),
+                                    month: parseInt(monthMatch[1], 10)
+                                };
+                            }
+                            return null;
+                        };
+                        
+                        // 3. 開始切換年份與月份 (採用面板直選，速度快且 100% 穩定，避免連續點擊前一月超時)
+                        console.log("正在打開年份選擇器...");
+                        const yearBtn = Array.from(container.querySelectorAll('button')).find(btn => 
+                            (btn.getAttribute('aria-label') || "").includes("年份") || 
+                            (btn.getAttribute('data-test') || "").includes("year") ||
+                            /^\d{4}年?$/.test(btn.innerText.trim())
+                        );
+                        
+                        if (!yearBtn) {
+                            throw new Error("找不到年份選擇按鈕");
+                        }
+                        
+                        triggerClick(yearBtn);
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        
+                        // 在年份面板中點選目標年份
+                        const targetYearText = `${startYear}年`;
+                        const targetYearBtn = Array.from(container.querySelectorAll('*')).find(el => {
+                            const text = (el.innerText || "").trim();
+                            return (text === targetYearText || text === startYear.toString()) && el.children.length === 0;
+                        });
+                        
+                        if (!targetYearBtn) {
+                            throw new Error("找不到目標年份單元格: " + startYear);
+                        }
+                        
+                        console.log("已找到並點選目標年份: " + startYear);
+                        triggerClick(targetYearBtn);
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        
+                        // 點選目標月份 (如果年份點選後沒有自動開啟月份面板，則主動點擊月份按鈕)
+                        let monthBtn = Array.from(container.querySelectorAll('button')).find(btn => 
+                            (btn.getAttribute('aria-label') || "").includes("月份") || 
+                            (btn.getAttribute('data-test') || "").includes("month") ||
+                            /^\d{1,2}月$/.test(btn.innerText.trim())
+                        );
+                        
+                        if (monthBtn) {
+                            console.log("主動開啟月份選擇器...");
+                            triggerClick(monthBtn);
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                        }
+                        
+                        // 在月份面板中點選目標月份
+                        const targetMonthText = `${startMonth}月`;
+                        const targetMonthBtn = Array.from(container.querySelectorAll('*')).find(el => {
+                            const text = (el.innerText || "").trim();
+                            return (text === targetMonthText || text === startMonth.toString()) && el.children.length === 0;
+                        });
+                        
+                        if (!targetMonthBtn) {
+                            throw new Error("找不到目標月份單元格: " + startMonth);
+                        }
+                        
+                        console.log("已找到並點選目標月份: " + startMonth);
+                        triggerClick(targetMonthBtn);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // 4. 定位並點擊起始日與結束日 (優先採用 Vue Datepicker 特有單元格)
+                        const getActiveDays = (calendarContainer) => {
+                            // 優先嘗試 `@vuepic/vue-datepicker` 單元格點選元素 `.dp__cell_inner`
+                            const vuepicDays = Array.from(calendarContainer.querySelectorAll('.dp__cell_inner')).filter(el => {
+                                const className = el.getAttribute('class') || "";
+                                return !className.includes('disabled') && !className.includes('offset');
+                            });
+                            
+                            if (vuepicDays.length >= 28) {
+                                return vuepicDays;
+                            }
+                            
+                            // 其次嘗試 Element UI / Plus 等一般單元格元素
+                            const elDays = Array.from(calendarContainer.querySelectorAll('.el-date-table__row td:not(.disabled):not(.next-month):not(.prev-month)'));
+                            if (elDays.length >= 28) {
+                                return elDays;
+                            }
+                            
+                            // 最末級備用：純數字葉子節點進行類別特徵排除
+                            const allEls = Array.from(calendarContainer.querySelectorAll('*'));
+                            const candidates = allEls.filter(el => {
+                                const text = (el.innerText || "").trim();
+                                const val = parseInt(text, 10);
+                                return !isNaN(val) && val >= 1 && val <= 31 && text === val.toString() && el.children.length === 0;
+                            });
+                            
+                            return candidates.filter(el => {
+                                const className = el.getAttribute('class') || "";
+                                const parentClassName = el.parentElement ? (el.parentElement.getAttribute('class') || "") : "";
+                                const grandparentClassName = el.parentElement && el.parentElement.parentElement ? (el.parentElement.parentElement.getAttribute('class') || "") : "";
+                                
+                                const isOutside = className.includes('prev') || className.includes('next') || 
+                                                  className.includes('off') || className.includes('outside') ||
+                                                  className.includes('disabled') || className.includes('grey') || className.includes('offset') ||
+                                                  parentClassName.includes('prev') || parentClassName.includes('next') ||
+                                                  parentClassName.includes('off') || parentClassName.includes('outside') ||
+                                                  parentClassName.includes('grey') || parentClassName.includes('offset');
+                                                  
+                                return !isOutside;
+                            });
+                        };
+                        
+                        const activeDays = getActiveDays(container);
+                        const startEl = activeDays.find(el => parseInt(el.innerText, 10) === startDay);
+                        const endEl = activeDays.find(el => parseInt(el.innerText, 10) === endDay);
+                        
+                        if (!startEl || !endEl) {
+                            throw new Error("找不到本月對應的日單元格: 起日=" + startDay + ", 迄日=" + endDay);
+                        }
+                        
+                        triggerClick(startEl);
+                        await new Promise(resolve => setTimeout(resolve, 250));
+                        
+                        triggerClick(endEl);
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        return {
+                            success: true,
+                            finalValue: dateInput.value
+                        };
+                    }
+                    """
+                    try:
+                        res = page.evaluate(js_script, {
+                            "startYear": target_year,
+                            "startMonth": target_month,
+                            "startDay": target_start_day,
+                            "endDay": target_end_day
+                        })
+                        print(f"[爬蟲] 點擊日曆完成！目前輸入欄位值為: {res.get('finalValue')}")
+                        page.wait_for_timeout(500)
+                        try:
+                            page.keyboard.press("Escape")
+                            page.wait_for_timeout(300)
+                        except Exception:
+                            pass
+                    except Exception as je:
+                        current_url = page.url
+                        screenshot_path = os.path.join("data", "error_screenshot.png")
+                        try:
+                            page.screenshot(path=screenshot_path)
+                            print(f"[除錯] 點擊日曆失敗時網頁 URL 為: {current_url}")
+                            print(f"[除錯] 錯誤訊息為: {je}")
+                            print(f"[除錯] 已儲存錯誤截圖至: {screenshot_path}")
+                        except Exception as se:
+                            print(f"[除錯] 儲存截圖或列印除錯資訊失敗: {se}")
+                            
+                        # 如果是歷史年份 (比如 2025) 且發生上下文銷毀或找不到輸入框，代表已被大平台強制重置（已達查詢最早極限）
+                        if target_year < datetime.now().year and ("context was destroyed" in str(je) or "navigation" in str(je) or "找不到日期輸入框" in str(je)):
+                            print(f"\n[爬蟲] 偵測到大平台拒絕了歷史年份 {target_year} 年的日期 {m_start} ~ {m_end} 並強制重置頁面。")
+                            print("       這代表已到達您個人載具在大平台允許查詢的最早歷史極限！")
+                            print("       系統將安全結束歷史抓取，並自動開始整合清洗已下載的 2026 年份資料...\n")
+                            break
+                            
+                        # 檢查是否為執行上下文被銷毀的導航錯誤，如果是，等候 1.5 秒並重試一次！
+                        if "context was destroyed" in str(je) or "navigation" in str(je):
+                            print("[提示] 偵測到網頁背景導航重載，正在等待網頁穩定並進行二次重試...")
+                            page.wait_for_timeout(1500)
+                            try:
+                                res = page.evaluate(js_script, {
+                                    "startYear": target_year,
+                                    "startMonth": target_month,
+                                    "startDay": target_start_day,
+                                    "endDay": target_end_day
+                                })
+                                print(f"[爬蟲] [二次重試成功] 點擊日曆完成！目前輸入欄位值為: {res.get('finalValue')}")
+                                page.wait_for_timeout(500)
+                                try:
+                                    page.keyboard.press("Escape")
+                                    page.wait_for_timeout(300)
+                                except Exception:
+                                    pass
+                            except Exception as re_je:
+                                print(f"[警告] 二次重試點擊日曆失敗: {re_je}。將降級採用文字直接填充...")
+                                date_input = date_inputs[0]
+                                date_input.click()
+                                page.keyboard.press("Control+A")
+                                page.keyboard.press("Backspace")
+                                date_range_str = f"{m_start} ~ {m_end}"
+                                date_input.fill(date_range_str)
+                                page.wait_for_timeout(300)
+                                try:
+                                    page.keyboard.press("Escape")
+                                    page.wait_for_timeout(300)
+                                except Exception:
+                                    pass
+                        else:
+                            print(f"[警告] 自動模擬點擊日曆失敗: {je}。將降級採用文字直接填充...")
+                            date_input = date_inputs[0]
+                            date_input.click()
+                            page.keyboard.press("Control+A")
+                            page.keyboard.press("Backspace")
+                            date_range_str = f"{m_start} ~ {m_end}"
+                            date_input.fill(date_range_str)
+                            page.wait_for_timeout(300)
+                            try:
+                                page.keyboard.press("Escape")
+                                page.wait_for_timeout(300)
+                            except Exception:
+                                pass
+                # 情況 B：兩個獨立的起、迄輸入框
+                elif len(date_inputs) >= 2:
+                    date_inputs[0].click()
+                    page.keyboard.press("Control+A")
+                    page.keyboard.press("Backspace")
+                    date_inputs[0].fill(m_start)
+                    page.wait_for_timeout(300)
+                    
+                    date_inputs[1].click()
+                    page.keyboard.press("Control+A")
+                    page.keyboard.press("Backspace")
+                    date_inputs[1].fill(m_end)
+                    print(f"[爬蟲] 已自動填入開始與結束日期: {m_start} ~ {m_end}")
+                    page.wait_for_timeout(300)
+                    try:
+                        page.keyboard.press("Escape")
+                        page.wait_for_timeout(300)
+                    except Exception:
+                        pass
+                else:
+                    print("[提示] 未能自動定位日期輸入框，將採用網頁預設值（當月）。")
+                    
+                # 驗證輸入值是否被平台重置（防範日期超出範圍被平台強制回彈）
+                verified = True
+                page.wait_for_timeout(200) # 給網頁短暫時間反應
+                
+                def to_digits(s):
+                    import re
+                    return re.sub(r'\D', '', str(s))
+                
+                # 動態計算去除前導零的純數字，以精準相容網頁端顯示的「2026年5月1日」（無前導零）
+                target_start_dt_digits = f"{target_year}{target_month}{target_start_day}"
+                target_end_dt_digits = f"{target_year}{target_month}{target_end_day}"
+                
+                if len(date_inputs) == 1:
+                    val_digits = to_digits(date_inputs[0].input_value() or "")
+                    if target_start_dt_digits not in val_digits or target_end_dt_digits not in val_digits:
+                        verified = False
+                elif len(date_inputs) >= 2:
+                    val_start_digits = to_digits(date_inputs[0].input_value() or "")
+                    val_end_digits = to_digits(date_inputs[1].input_value() or "")
+                    if target_start_dt_digits not in val_start_digits or target_end_dt_digits not in val_end_digits:
+                        verified = False
+                        
+                if not verified:
+                    print(f"\n[警告] 偵測到輸入的日期 {m_start} ~ {m_end} 與網頁實際日期不符！")
+                    
+                    import sys
+                    is_interactive = sys.stdin.isatty()
+                    print("\n" + "="*70)
+                    print(" [系統暫停] 日期校驗未通過。請在瀏覽器中檢查日期輸入是否正確。")
+                    print("             這可能是因為到達了平台的最早限制，或是日曆點選未成功。")
+                    print("="*70 + "\n")
+                    if is_interactive:
+                        input(">>> 請檢查瀏覽器。確認後請回到此處按下 [Enter] 鍵，系統將會終止歷史抓取流程並開始清洗已下載的發票...")
+                    else:
+                        print("[提示] 非互動式終端機，自動等待 10 秒供您查看瀏覽器，之後將終止歷史抓取並進行資料清洗...")
+                        page.wait_for_timeout(10000)
+                        
+                    break
+                    
+                # 尋找並點擊查詢按鈕
+                query_btn_selectors = [
+                    "button:has-text('查詢')", "input[type='button'][value='查詢']", 
+                    "input[type='submit'][value='查詢']", "button[id*='query']", 
+                    "button[id*='search']", "text=查詢"
+                ]
+                
+                query_btn = None
+                for sel in query_btn_selectors:
+                    try:
+                        loc = page.locator(sel)
+                        if loc.count() > 0 and loc.first.is_visible():
+                            query_btn = loc.first
+                            break
+                    except Exception:
+                        continue
+                        
+                if query_btn:
+                    try:
+                        query_btn.click(timeout=3000)
+                    except Exception:
+                        try:
+                            query_btn.click(force=True, timeout=2000)
+                        except Exception:
+                            query_btn.evaluate("el => el.click()")
+                    print("[爬蟲] 已點擊『查詢』按鈕，正在等待發票列表載入...")
+                    query_success = True
+                else:
+                    print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點擊。")
+                    page.wait_for_timeout(3000)
+            except Exception as e:
+                print(f"[提示] 設定此月份查詢條件略過，請手動設定日期並點擊『查詢』: {e}")
+                
+            # 等待列表與勾選框載入
+            print("[爬蟲] 正在等待查詢結果載入...")
+            try:
+                page.wait_for_selector("input[type='checkbox']", timeout=8000)
+                page.wait_for_timeout(1000)
+            except Exception as e:
+                print(f"[提示] 此月份無勾選框，可能該區間內無發票資料。")
+    
+            # 自動勾選發票
             checkboxes = page.locator("input[type='checkbox']")
             box_count = checkboxes.count()
             print(f"[爬蟲] 偵測到 {box_count} 個勾選方塊。")
             
-            if box_count > 0:
-                # 優先點擊第一個勾選框 (大平台通常第一個是 Table Header 中的「全選」按鈕，優先使用 JS .click() 避免 pointer-interception)
+            if box_count == 0:
+                print(f"[提示] 此月份查無發票數據，略過下載並切換至下一個月份。")
+                continue
+                
+            try:
+                # 優先點擊全選
                 first_box = checkboxes.first
                 if not first_box.is_checked():
                     try:
                         first_box.evaluate("el => el.click()")
-                        print("[爬蟲] [OK] 已自動點擊『全選』勾選框 (JS)。")
+                        print("[爬蟲] 已自動點擊『全選』勾選框 (JS)。")
                     except Exception as je:
-                        print(f"[提示] JS 點擊全選受阻 ({je})，嘗試 Playwright 強制勾選...")
                         try:
-                            first_box.check(force=True, timeout=5000)
-                            print("[爬蟲] [OK] 已自動點擊『全選』勾選框 (Playwright 強制)。")
-                        except Exception as fe:
-                            print(f"[警告] 強制勾選失敗: {fe}")
-                    page.wait_for_timeout(1000)
+                            first_box.check(force=True, timeout=3000)
+                        except Exception:
+                            pass
+                    page.wait_for_timeout(800)
                 
-                # 安全保險：二次檢查，若仍有未勾選的個別項目，全部強制勾選
+                # 二次保險全部強制勾選
                 for i in range(box_count):
                     box = checkboxes.nth(i)
                     if not box.is_checked():
@@ -294,101 +728,108 @@ def run_browser_automation():
                             box.evaluate("el => el.click()")
                         except Exception:
                             try:
-                                box.check(force=True, timeout=2000)
+                                box.check(force=True, timeout=1000)
                             except Exception:
                                 pass
-                print("[爬蟲] [OK] 所有發票項目已確保皆已完成勾選。")
-            else:
-                print("[提示] 找不到任何勾選框，可能該區間內沒有發票數據。")
-        except Exception as e:
-            print(f"[提示] 自動勾選發票略過，請手動在瀏覽器中點選「全選」勾選框: {e}")
-
-        # 6. 自動攔截並下載發票 CSV 檔案 (等待按鈕啟用，避免 disabled 點擊超時)
-        print("[爬蟲] 正在尋找 CSV 下載按鈕...")
-        download_success = False
-        try:
-            download_selectors = [
-                "text=下載明細CSV", "text=下載明細", "text=下載", "text=匯出",
-                "button:has-text('下載')", "button:has-text('匯出')", 
-                "input[value*='下載']", "input[value*='匯出']", 
-                "a:has-text('下載')", "a:has-text('匯出')", 
-                "button[id*='download']", "a[id*='download']", "button[title*='下載']"
-            ]
+            except Exception as e:
+                print(f"[提示] 自動勾選發票略過，請手動點選「全選」: {e}")
+    
+            # 下載 CSV 檔案
+            print("[爬蟲] 正在尋找 CSV 下載按鈕...")
+            download_success = False
+            target_filename = f"invoices_{m_start.replace('/', '')}_{m_end.replace('/', '')}.csv"
+            target_path = os.path.join("data", target_filename)
             
-            download_btn = None
-            for sel in download_selectors:
-                try:
-                    loc = page.locator(sel)
-                    if loc.count() > 0 and loc.first.is_visible():
-                        download_btn = loc.first
-                        break
-                except Exception:
-                    continue
-            
-            if download_btn:
-                # 輪詢等待下載按鈕變成啟用狀態 (not disabled)，最長等待 20 秒
-                print("[爬蟲] 偵測到下載按鈕。正在等待按鈕啟用...")
-                btn_enabled = False
-                for _ in range(20):
-                    if not download_btn.is_disabled():
-                        btn_enabled = True
-                        break
-                    page.wait_for_timeout(1000)
+            try:
+                download_selectors = [
+                    "text=下載明細CSV", "text=下載明細", "text=下載", "text=匯出",
+                    "button:has-text('下載')", "button:has-text('匯出')", 
+                    "input[value*='下載']", "input[value*='匯出']", 
+                    "a:has-text('下載')", "a:has-text('匯出')", 
+                    "button[id*='download']", "a[id*='download']", "button[title*='下載']"
+                ]
                 
-                if btn_enabled:
-                    print("[爬蟲] [OK] 下載按鈕已啟用！啟動自動下載攔截器...")
-                    with page.expect_download(timeout=25000) as download_info:
-                        try:
-                            download_btn.click(force=True, timeout=5000)
-                        except Exception as e:
-                            print(f"[提示] 下載按鈕點擊受阻 ({e})，正在嘗試 JS 強制點擊下載...")
-                            download_btn.evaluate("el => el.click()")
-                    download = download_info.value
+                download_btn = None
+                for sel in download_selectors:
+                    try:
+                        loc = page.locator(sel)
+                        if loc.count() > 0 and loc.first.is_visible():
+                            download_btn = loc.first
+                            break
+                    except Exception:
+                        continue
+                
+                if download_btn:
+                    btn_enabled = False
+                    for _ in range(15):
+                        if not download_btn.is_disabled():
+                            btn_enabled = True
+                            break
+                        page.wait_for_timeout(1000)
                     
-                    # 自動存檔至 data/invoices.csv
-                    target_path = os.path.join("data", "invoices.csv")
-                    download.save_as(target_path)
-                    print(f"[成功] [OK] 發票明細 CSV 檔案已自動下載並儲存至: {target_path}")
-                    download_success = True
-                    page.wait_for_timeout(2000)
+                    if btn_enabled:
+                        print("[爬蟲] 下載按鈕已啟用，啟動自動下載攔召器...")
+                        with page.expect_download(timeout=25000) as download_info:
+                            try:
+                                download_btn.click(force=True, timeout=5000)
+                            except Exception as e:
+                                download_btn.evaluate("el => el.click()")
+                        download = download_info.value
+                        download.save_as(target_path)
+                        print(f"[成功] CSV 檔案已自動儲存至: {target_path}")
+                        download_success = True
+                        any_download_success = True
+                        
+                        # 下載成功後，給予平台充足的非同步處理與重載反應時間，並等待其穩定！
+                        page.wait_for_timeout(3500)
+                        try:
+                            # 如果下載動作觸發了背景的 Loading/重載，等待其完全結束並重新就緒！
+                            page.wait_for_selector("button:has-text('查詢')", state="visible", timeout=6000)
+                            page.wait_for_timeout(1000)
+                        except Exception:
+                            pass
+                    else:
+                        print("[提示] 下載按鈕仍為禁用狀態。")
                 else:
-                    print("[提示] 資料載入時間過長，下載按鈕仍處於禁用狀態。請手動點擊下載。")
-            else:
-                print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載CSV檔』...")
-        except Exception as e:
-            print(f"[提示] 自動下載失敗，請手動在瀏覽器下載 CSV，並放入專案的 `data/` 目錄中: {e}")
-            
-        if not download_success:
-            print("\n" + "="*70)
-            print(" 👉 機器人自動化下載受阻，請在開啟的瀏覽器視窗中手動操作：")
-            print("   1. 請手動在瀏覽器選取全選，並點選「下載明細CSV」或「匯出」。")
-            print("   (系統正在自動監控 `data/` 目錄，一旦偵測到下載檔案將自動接續執行！)")
-            print("="*70 + "\n")
-            
-            import sys
-            # 檢查是否為非互動式終端 (比如透過 Vite DevServer 後台啟動)
-            is_interactive = sys.stdin.isatty()
-            
-            target_path = os.path.join("data", "invoices.csv")
-            manual_downloaded = False
-            
-            # 不論是否互動，皆先啟動 3 分鐘的目錄輪詢自動監控，這對使用者而言體驗最好
-            print("[提示] 機器人正在監控 `data/invoices.csv` 檔案生成...")
-            for _ in range(90): # 90 * 2 秒 = 180 秒 (3 分鐘)
-                if os.path.exists(target_path) and os.path.getsize(target_path) > 100:
-                    time.sleep(1) # 等待寫入穩定
-                    print("[成功] [OK] 偵測到發票明細 CSV 檔案，機器人即將關閉瀏覽器並接手清洗！")
-                    manual_downloaded = True
-                    download_success = True
-                    break
-                time.sleep(2)
+                    print("[提示] 找不到自動下載按鈕。")
+            except Exception as e:
+                print(f"[提示] 自動下載失敗: {e}")
                 
-            if not manual_downloaded and is_interactive:
-                # 若為互動式終端且監控超時，才降級至 input() 阻塞等待
-                input(">>> 監控超時。當您手動下載好 CSV 並放入 data/ 後，請回到此處按下 [Enter] 鍵繼續...")
-                if os.path.exists(target_path):
-                    download_success = True
-            
+            if not download_success:
+                print("\n" + "="*70)
+                print(f" -> 批次自動化下載受阻，請在開啟的瀏覽器視窗中對該月份手動操作：")
+                print(f"   1. 請手動在此月份選取全選，並點選「下載明細CSV」或「匯出」。")
+                print(f"   (系統正在自動監控 `data/` 目錄，一旦偵測到下載將自動改名為: {target_filename})")
+                print("="*70 + "\n")
+                
+                import sys
+                is_interactive = sys.stdin.isatty()
+                manual_downloaded = False
+                
+                print(f"[提示] 機器人正在監控 `data/invoices.csv` 或 {target_filename} 檔案生成...")
+                for _ in range(90):
+                    default_download_path = os.path.join("data", "invoices.csv")
+                    if os.path.exists(default_download_path) and os.path.getsize(default_download_path) > 100:
+                        time.sleep(1)
+                        os.rename(default_download_path, target_path)
+                        print(f"[成功] 偵測到手動下載 CSV，已自動重新命名為: {target_path}")
+                        manual_downloaded = True
+                        download_success = True
+                        any_download_success = True
+                        break
+                    elif os.path.exists(target_path) and os.path.getsize(target_path) > 100:
+                        manual_downloaded = True
+                        download_success = True
+                        any_download_success = True
+                        break
+                    time.sleep(2)
+                    
+                if not manual_downloaded and is_interactive:
+                    input(f">>> 監控超時。當您手動下載好 CSV 並改名為 {target_filename} 後，請回到此處按下 [Enter] 鍵繼續...")
+                    if os.path.exists(target_path):
+                        download_success = True
+                        any_download_success = True
+                        
         print("\n[爬蟲] 流程完成！正在關閉瀏覽器...")
         context.close()
         browser.close()

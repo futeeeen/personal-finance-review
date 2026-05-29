@@ -10,8 +10,20 @@ const crawlerApiPlugin = () => ({
       const url = new URL(req.url, 'http://localhost')
       
       if (url.pathname === '/api/run-crawler') {
-        const start = url.searchParams.get('start') || '2026/01/01'
-        const end = url.searchParams.get('end') || '2026/05/29'
+        const today = new Date()
+        const yyyy = today.getFullYear()
+        const mm = String(today.getMonth() + 1).padStart(2, '0')
+        const dd = String(today.getDate()).padStart(2, '0')
+        const defaultEnd = `${yyyy}/${mm}/${dd}`
+        
+        // 動態計算 9 個月前的第一天作為最早可查詢日期，避免硬編碼造成未來執行錯誤
+        const startDateObj = new Date(today.getFullYear(), today.getMonth() - 8, 1)
+        const startYyyy = startDateObj.getFullYear()
+        const startMm = String(startDateObj.getMonth() + 1).padStart(2, '0')
+        const defaultStart = `${startYyyy}/${startMm}/01`
+        
+        const start = url.searchParams.get('start') || defaultStart
+        const end = url.searchParams.get('end') || defaultEnd
         
         res.writeHead(200, {
           'Content-Type': 'application/json; charset=utf-8',

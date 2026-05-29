@@ -3,6 +3,9 @@ config.json
 .env
 .env.local
 .env.*
+data/
+public/data/invoice_data.json
+
 
 # Python Cache & Builds
 __pycache__/

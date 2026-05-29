@@ -111,7 +111,7 @@ def parse_downloaded_csv(csv_file):
     強大的模糊欄位 CSV 讀取器，解決 Excel CP950/BIG5 亂碼並自動對齊欄位結構
     """
     global _csv_details_cache
-    _csv_details_cache = {}
+    # 支援批次跨月合併，此處保留舊 cache 項目不直接清空
     
     encodings = ['utf-8-sig', 'utf-8', 'big5', 'cp950', 'gbk']
     content_lines = []
@@ -360,22 +360,42 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
     """
     print("[Cleaner] 開始執行資料撈取與清洗流程...")
     
-    # 偵測本地 data/*.csv 檔案
-    csv_file = None
+    global _csv_details_cache
+    _csv_details_cache = {}
+    
+    # 偵測本地 data/*.csv 檔案 (支援批次跨月發票 CSV 合併載入)
+    csv_files = []
     data_dir = os.path.join(os.getcwd(), "data")
     if os.path.exists(data_dir):
-        files = [f for f in os.listdir(data_dir) if f.endswith('.csv')]
-        if files:
-            csv_file = os.path.join(data_dir, files[0])
-            print(f"[Cleaner] [OK] 偵測到本地發票 CSV 數據檔案: {csv_file}")
+        csv_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.csv')]
+        if csv_files:
+            print(f"[Cleaner] [OK] 偵測到本地共 {len(csv_files)} 個發票 CSV 數據檔案，即將進行批次合併洗滌...")
             
     raw_invoices = []
     
     # 第一種方案：本地 CSV 解析
-    if csv_file:
-        raw_invoices = parse_downloaded_csv(csv_file)
-        if not raw_invoices:
-            print("[Cleaner] 警告：本地 CSV 解析失敗。降級採用 Client 金鑰介接方案。")
+    if csv_files:
+        for csv_file in csv_files:
+            try:
+                parsed = parse_downloaded_csv(csv_file)
+                if parsed:
+                    raw_invoices.extend(parsed)
+            except Exception as pe:
+                print(f"[Cleaner] [警告] 解析檔案 {os.path.basename(csv_file)} 失敗: {pe}")
+                
+        # 對合併後的發票清單進行唯一性去重 (避免跨月或重疊下載導致重複統計)
+        if raw_invoices:
+            unique_invoices = []
+            seen_nums = set()
+            for inv in raw_invoices:
+                num = inv["invNum"]
+                if num not in seen_nums:
+                    seen_nums.add(num)
+                    unique_invoices.append(inv)
+            raw_invoices = unique_invoices
+            print(f"[Cleaner] [OK] 批次合併去重清洗完成，共計 {len(raw_invoices)} 張獨立發票！")
+        else:
+            print("[Cleaner] 警告：所有本地 CSV 解析皆失敗。降級採用 Client 金鑰介接方案。")
             
     # 第二種方案：Client（API 或 Mock）解析
     if not raw_invoices:

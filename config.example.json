@@ -1,0 +1,7 @@
+{
+  "appId": "YOUR_MOF_APP_ID",
+  "apiKey": "YOUR_MOF_API_KEY",
+  "cardNo": "/AB12345",
+  "cardEncrypt": "YOUR_CARRIER_PASSWORD",
+  "useMock": true
+}

@@ -156,7 +156,6 @@ def run_browser_automation():
                 # 若包含日期關鍵字，納入處理
                 if any(kw in placeholder or kw in name or kw in id_attr or kw in class_attr 
                        for kw in ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄']):
-                    # 動態移除單一元素的唯讀屬性
                     page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
                     date_inputs.append(input_el)
 
@@ -226,7 +225,6 @@ def run_browser_automation():
             if query_btn:
                 query_btn.click()
                 print("[爬蟲] [OK] 已自動點擊『查詢』按鈕，正在等待發票列表載入...")
-                page.wait_for_timeout(6000) # 給予 6 秒載入發票列表
                 query_success = True
             else:
                 print("[提示] 未能自動定位『查詢』按鈕，請手動在瀏覽器中點選『查詢』。")
@@ -234,7 +232,43 @@ def run_browser_automation():
         except Exception as e:
             print(f"[提示] 自動設定查詢條件略過，請手動在瀏覽器設定日期並點擊『查詢』: {e}")
             
-        # 4. 自動攔截並下載發票 CSV 檔案 (等待按鈕啟用，避免 disabled 點擊超時)
+        # 4. 等待明細發票列表與勾選框載入 (解決新版平台 /detail 頁面跳轉問題)
+        print("[爬蟲] 正在等待查詢發票結果列表載入...")
+        try:
+            # 最長等待 15 秒，直到畫面上渲染出勾選方塊 (這代表查詢成功且發票清單已加載)
+            page.wait_for_selector("input[type='checkbox']", timeout=15000)
+            page.wait_for_timeout(1500) # 給予 1.5 秒讓表格穩定
+            print(f"[爬蟲] [OK] 發票清單加載成功，當前網址: {page.url}")
+        except Exception as e:
+            print(f"[提示] 等待發票明細表載入超時，將嘗試直接尋找方塊: {e}")
+
+        # 5. 自動勾選所有發票項目 (核心發現：大平台規定必須「勾選」發票才能啟用下載按鈕！)
+        print("[爬蟲] 正在自動勾選所有發票項目以啟用下載按鈕...")
+        try:
+            checkboxes = page.locator("input[type='checkbox']")
+            box_count = checkboxes.count()
+            print(f"[爬蟲] 偵測到 {box_count} 個勾選方塊。")
+            
+            if box_count > 0:
+                # 優先點擊第一個勾選框 (大平台通常第一個是 Table Header 中的「全選」按鈕)
+                first_box = checkboxes.first
+                if not first_box.is_checked():
+                    first_box.check()
+                    print("[爬蟲] [OK] 已自動點擊『全選』勾選框。")
+                    page.wait_for_timeout(1000)
+                
+                # 安全保險：二次檢查，若仍有未勾選的個別項目，手動將其全部勾選
+                for i in range(box_count):
+                    box = checkboxes.nth(i)
+                    if not box.is_checked():
+                        box.check()
+                print("[爬蟲] [OK] 所有發票項目已確保皆已勾選。")
+            else:
+                print("[提示] 找不到任何勾選框，可能該區間內沒有發票數據。")
+        except Exception as e:
+            print(f"[提示] 自動勾選發票略過，請手動在瀏覽器中點選「全選」勾選框: {e}")
+
+        # 6. 自動攔截並下載發票 CSV 檔案 (等待按鈕啟用，避免 disabled 點擊超時)
         print("[爬蟲] 正在尋找 CSV 下載按鈕...")
         download_success = False
         try:
@@ -243,7 +277,7 @@ def run_browser_automation():
                 "button:has-text('下載')", "button:has-text('匯出')", 
                 "input[value*='下載']", "input[value*='匯出']", 
                 "a:has-text('下載')", "a:has-text('匯出')", 
-                "button[id*='download']", "a[id*='download']"
+                "button[id*='download']", "a[id*='download']", "button[title*='下載']"
             ]
             
             download_btn = None
@@ -257,8 +291,8 @@ def run_browser_automation():
                     continue
             
             if download_btn:
-                # 輪詢等待下載按鈕變成啟用狀態 (not disabled)，最多等待 20 秒 (解決後台資料庫加載延遲問題)
-                print("[爬蟲] 偵測到下載按鈕。正在等待大平台加載完成並啟用下載功能...")
+                # 輪詢等待下載按鈕變成啟用狀態 (not disabled)，最長等待 20 秒
+                print("[爬蟲] 偵測到下載按鈕。正在等待按鈕啟用...")
                 btn_enabled = False
                 for _ in range(20):
                     if not download_btn.is_disabled():
@@ -279,9 +313,9 @@ def run_browser_automation():
                     download_success = True
                     page.wait_for_timeout(2000)
                 else:
-                    print("[提示] 資料載入時間過長，下載按鈕仍處於禁用狀態。請手動點擊下載。")
+                    print("[提示] 下載按鈕仍為禁用狀態，請您在瀏覽器中手動點擊『下載CSV檔』。")
             else:
-                print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載明細 CSV』或『匯出 CSV』...")
+                print("[提示] 找不到自動下載按鈕，請在瀏覽器中手動點擊『下載CSV檔』...")
         except Exception as e:
             print(f"[提示] 自動下載失敗，請手動在瀏覽器下載 CSV，並放入專案的 `data/` 目錄中: {e}")
             
@@ -289,7 +323,7 @@ def run_browser_automation():
             print("\n" + "="*70)
             print(" 👉 機器人自動化下載受阻，請手動在瀏覽器完成下載動作：")
             print("   1. 請手動在瀏覽器下載您的發票 CSV 明細檔。")
-            print("   2. 將下載的 CSV 檔案移至專案目錄 the `data/` 資料夾下。")
+            print("   2. 將下載的 CSV 檔案移至專案目錄的 `data/` 資料夾下。")
             print("="*70 + "\n")
             input(">>> 當您「手動下載好 CSV」並放入 `data/` 資料夾後，請回到此處按下 [Enter] 鍵繼續...")
             

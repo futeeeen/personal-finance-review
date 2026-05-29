@@ -853,9 +853,15 @@ function App() {
               </div>
             </div>
             
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
-              <Info size={12} />
-              格內數字代表交易發票張數，滑鼠移入格內可查看該時段累計消費總金額。
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Info size={12} />
+                <span>格內數字代表交易發票張數，滑鼠移入格內可查看該時段累計消費總金額。</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.25rem', opacity: 0.85 }}>
+                <AlertTriangle size={12} style={{ color: '#ef4444' }} />
+                <span>註：財政部官網匯出的載具 CSV 明細檔案「未包含交易時間」，因此匯入後系統預設時間為 12:00:00，故熱力圖會集中在午餐時段呈現（此為財政部原始資料之限制）。</span>
+              </div>
             </div>
           </div>
         </div>

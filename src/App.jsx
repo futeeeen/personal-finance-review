@@ -76,6 +76,10 @@ function App() {
   const [crawlerError, setCrawlerError] = useState(null);
   const [crawlerSuccess, setCrawlerSuccess] = useState(false);
   
+  // 退貨明細彈出視窗狀態
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [expandedRefundInvoices, setExpandedRefundInvoices] = useState({});
+  
   // 獲取過去幾個月前的年月日字串 (格式 YYYY-MM-DD)
   const getPastDateStr = (monthsAgo) => {
     const d = new Date();
@@ -141,8 +145,15 @@ function App() {
     setCrawlerSuccess(false);
     
     try {
-      const startFormatted = startDate.replace(/-/g, '/');
-      const endFormatted = endDate.replace(/-/g, '/');
+      // 自動使用本地最新發票日期及今天日期範圍進行下載，避免手動輸入
+      const latestLocalStr = data?.summary?.maxDate || getEarliestSelectableDateStr();
+      const todayStr = getTodayStr();
+      
+      setStartDate(latestLocalStr);
+      setEndDate(todayStr);
+      
+      const startFormatted = latestLocalStr.replace(/-/g, '/');
+      const endFormatted = todayStr.replace(/-/g, '/');
       
       const response = await fetch(`/api/run-crawler?start=${startFormatted}&end=${endFormatted}`);
       if (!response.ok) {
@@ -383,7 +394,7 @@ function App() {
     // 狀態過濾
     const matchStatus = statusFilter === 'All' ||
       (statusFilter === 'Active' && inv.invStatus === '已開立') ||
-      (statusFilter === 'Voided' && inv.invStatus === '已作廢') ||
+(statusFilter === 'Voided' && inv.invStatus === '已作廢') ||
       (statusFilter === 'Refund' && inv.isRefund);
       
     return matchQuery && matchCategory && matchStatus;
@@ -422,53 +433,23 @@ function App() {
         <div className="glass-card crawler-panel" style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '1rem', 
+          gap: '1.25rem', 
           padding: '0.6rem 1.2rem', 
           borderRadius: '12px',
           border: '1px solid var(--border-color)',
           background: 'rgba(255,255,255,0.02)'
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-              資料庫更新時間：{summary.lastUpdated}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>從</span>
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    padding: '0.25rem 0.4rem',
-                    fontSize: '0.7rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>到</span>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={(e) => setEndDate(e.target.value)}
-                  style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    borderRadius: '6px',
-                    padding: '0.25rem 0.4rem',
-                    fontSize: '0.7rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>本地最近一筆日期</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Calendar size={14} style={{ color: 'var(--primary)' }} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>
+                {summary.maxDate ? summary.maxDate.replace(/-/g, '/') : '無資料'}
+              </span>
             </div>
           </div>
+          
+          <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
           
           <button 
             onClick={handleRunCrawler}
@@ -477,19 +458,19 @@ function App() {
               background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
               border: 'none',
               color: '#fff',
-              padding: '0.5rem 1rem',
+              padding: '0.6rem 1.2rem',
               borderRadius: '8px',
-              fontSize: '0.8rem',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: crawlerLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem',
+              gap: '0.5rem',
               boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
               transition: 'all 0.2s ease'
             }}
           >
-            <RefreshCw size={13} className={crawlerLoading ? 'spin' : ''} />
+            <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
             {crawlerLoading ? '正在同步...' : '同步雲端發票'}
           </button>
         </div>
@@ -534,12 +515,32 @@ function App() {
         </div>
 
         {/* KPI 4: 異常/退貨作廢 */}
-        <div className="glass-card kpi-card">
+        <div 
+          className="glass-card kpi-card clickable-kpi-card" 
+          onClick={() => setShowRefundModal(true)}
+          style={{ 
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 20px rgba(239, 68, 68, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
           <div className="kpi-icon-container crimson">
             <AlertTriangle size={24} />
           </div>
-          <div className="kpi-content">
-            <span className="kpi-label">異常值處理統計</span>
+          <div className="kpi-content" style={{ width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <span className="kpi-label">異常值處理統計</span>
+              <span style={{ fontSize: '0.75rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '0.1rem', fontWeight: 600 }}>
+                明細 <ArrowUpRight size={12} />
+              </span>
+            </div>
             <span className="kpi-value" style={{ fontSize: '1.25rem', marginTop: '0.35rem', fontWeight: 700, color: '#f87171' }}>
               退貨: {summary.totalRefundCount}筆 ({formatCurrency(Math.abs(summary.totalRefundAmount))})
             </span>
@@ -1053,6 +1054,209 @@ function App() {
         </div>
       </div>
       
+      {/* 退貨明細彈出視窗 (Refund Details Modal) */}
+      {showRefundModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(12px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem',
+          animation: 'fadeIn 0.25s ease'
+        }}>
+          <div className="glass-card" style={{
+            maxWidth: '850px',
+            width: '100%',
+            maxHeight: '85vh',
+            padding: '2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(30, 41, 59, 0.7)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="kpi-icon-container crimson" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
+                  <AlertTriangle size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>退貨明細清單</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    本地發票庫累計退貨：{summary.totalRefundCount} 筆，金額：{formatCurrency(Math.abs(summary.totalRefundAmount))}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowRefundModal(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: 'none',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content - Refund Invoices Scroll Area */}
+            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {invoices.filter(inv => inv.isRefund).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <HelpCircle size={48} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                  <p>目前本地發票庫中查無退貨記錄</p>
+                </div>
+              ) : (
+                invoices.filter(inv => inv.isRefund).map((inv) => {
+                  const isExpanded = expandedRefundInvoices[inv.invNum] || false;
+                  const primaryCategory = inv.items[0]?.category || '其它';
+                  
+                  return (
+                    <div key={inv.invNum} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div 
+                        className="invoice-item-row"
+                        onClick={() => setExpandedRefundInvoices(prev => ({ ...prev, [inv.invNum]: !prev[inv.invNum] }))}
+                        style={{ 
+                          cursor: 'pointer',
+                          borderLeft: '4px solid var(--danger)',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div className="invoice-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div className="invoice-icon" style={{ color: 'var(--danger)' }}>
+                            <Receipt size={18} />
+                          </div>
+                          <div className="invoice-main-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span className="invoice-seller" style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
+                            <div className="invoice-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{inv.invNum}</span>
+                              <span>•</span>
+                              <span>{inv.date} {inv.invTime} ({inv.weekday})</span>
+                              <span>•</span>
+                              <span className="invoice-badge-cat" style={{ borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.08)' }}>
+                                {primaryCategory}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="invoice-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                          <span className="invoice-amount-display refund" style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1.1rem' }}>
+                            -{formatCurrency(Math.abs(inv.amount))}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <span>含 {inv.items.length} 項退貨品項</span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expandable refund items table */}
+                      {isExpanded && (
+                        <div style={{ 
+                          background: 'rgba(239, 68, 68, 0.02)',
+                          border: '1px solid rgba(239, 68, 68, 0.05)',
+                          borderRadius: '12px',
+                          padding: '1rem',
+                          marginLeft: '0.25rem',
+                          marginBottom: '0.5rem',
+                          animation: 'fadeIn 0.2s ease'
+                        }}>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}>
+                                  <th style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>退貨品項</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'center' }}>數量</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>單價</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>退款金額</th>
+                                  <th style={{ padding: '0.5rem 0 0.5rem 0.5rem', textAlign: 'center' }}>分類</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {inv.items.map((item, itemIdx) => (
+                                  <tr key={itemIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                    <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
+                                      {item.itemName}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                      {item.qty}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                                      {formatCurrency(item.price)}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', fontWeight: 600, color: 'var(--danger)' }}>
+                                      -{formatCurrency(Math.abs(item.amount))}
+                                    </td>
+                                    <td style={{ padding: '0.65rem 0 0.65rem 0.5rem', textAlign: 'center' }}>
+                                      <span style={{ 
+                                        padding: '0.15rem 0.45rem', 
+                                        borderRadius: '4px',
+                                        fontSize: '0.65rem',
+                                        fontWeight: 600,
+                                        backgroundColor: `${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}15`,
+                                        color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它'],
+                                        border: `1px solid ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}25`
+                                      }}>
+                                        {item.category}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+              <button 
+                onClick={() => setShowRefundModal(false)}
+                className="chart-btn active"
+                style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
+              >
+                關閉視窗
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 底部導引說明 */}
       <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
         臺灣財政部電子發票自動介接系統庫 • 專案連結：<a href="https://github.com/futeeeen/personal-finance-review.git" target="_blank" style={{ color: 'var(--primary)' }}>personal-finance-review</a>

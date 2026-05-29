@@ -264,7 +264,7 @@ def run_browser_automation():
                         page.evaluate("el => el.removeAttribute('readonly')", input_el.element_handle())
                         date_inputs.append(input_el)
         
-                # 情況 A：單一日期範圍輸入框，採用高度智慧的日曆點選模擬
+                # 情況 A：單一日期範圍輸入框，採用高度智慧的日曆選單模擬點選 (Vue 3 雙向綁定相容)
                 if len(date_inputs) == 1:
                     from datetime import datetime
                     try:
@@ -281,242 +281,152 @@ def run_browser_automation():
                     
                     print(f"[爬蟲] 正在全自動模擬點選日曆: {target_year}年{target_month}月 {target_start_day}日 ~ {target_end_day}日...")
                     
+                    # 1. 先用 Playwright 原生點擊開啟日曆
+                    try:
+                        date_inputs[0].click()
+                        print("[爬蟲] 已點擊日期輸入框，等待日曆選單渲染...")
+                        page.wait_for_selector(".dp__menu, .dp__outer_menu_wrap", timeout=5000)
+                    except Exception as ce:
+                        print(f"[警告] 原生點擊日曆彈窗超時或失敗: {ce}")
+                    
+                    # 2. 使用全網防冒泡穿透的 JS 點選算法
                     js_script = r"""
                     async (args) => {
                         const { startYear, startMonth, startDay, endDay } = args;
                         
-                        // 定義通用點擊觸發器，防範 SVG/path 元素不繼承 HTMLElement 導致 click() 缺失
-                        const triggerClick = (el) => {
-                            if (!el) return;
-                            if (typeof el.click === 'function') {
-                                el.click();
-                            } else {
-                                el.dispatchEvent(new MouseEvent('click', {
-                                    bubbles: true,
-                                    cancelable: true,
-                                    view: window
-                                }));
+                        // 全域禁用外部超連結和按鈕的點擊，徹底阻斷穿透與冒泡！
+                        document.querySelectorAll('a, button, [role="button"], .sidebar, header, nav, .menu').forEach(el => {
+                            if (!el.closest('.dp__menu') && !el.closest('.dp__outer_menu_wrap')) {
+                                el.style.pointerEvents = 'none';
                             }
-                        };
-                        
-                        // 1. 尋找日曆的輸入框並點選以彈出日曆視窗
-                        const inputs = Array.from(document.querySelectorAll('input'));
-                        const dateInput = inputs.find(el => {
-                            const placeholder = (el.getAttribute("placeholder") || "").toLowerCase();
-                            const name = (el.getAttribute("name") || "").toLowerCase();
-                            const id = (el.getAttribute("id") || "").toLowerCase();
-                            const className = (el.getAttribute("class") || "").toLowerCase();
-                            return ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄'].some(kw => 
-                                placeholder.includes(kw) || name.includes(kw) || id.includes(kw) || className.includes(kw)
-                            );
                         });
                         
-                        if (!dateInput) {
-                            throw new Error("找不到日期輸入框");
-                        }
-                        
-                        // 點擊輸入框開啟日曆
-                        triggerClick(dateInput);
-                        
-                        // 等待日曆視窗顯示 (最多等待 2 秒)
-                        let container = null;
-                        for (let i = 0; i < 20; i++) {
-                            const els = Array.from(document.querySelectorAll('*'));
-                            container = els.find(el => {
-                                const rect = el.getBoundingClientRect();
-                                if (rect.width === 0 || rect.height === 0) return false;
-                                const style = window.getComputedStyle(el);
-                                if (style.display === 'none' || style.visibility === 'hidden') return false;
-                                if (el.tagName !== 'DIV') return false;
-                                const text = el.innerText || "";
-                                return text.includes("週一") && text.includes("週二") && text.includes("週日") && el.querySelectorAll('div').length > 5;
-                            });
-                            if (container) break;
-                            await new Promise(resolve => setTimeout(resolve, 100));
-                        }
-                        
-                        if (!container) {
-                            throw new Error("找不到彈出的日曆視窗");
-                        }
-                        
-                        // 2. 尋找日曆的前後切換按鈕 (優先支持 Vue Datepicker 類別)
-                        const getNavButtons = (calendarContainer) => {
-                            // 優先嘗試 `@vuepic/vue-datepicker` 標準控制類別 (DevTools 顯示即為此框架)
-                            let prevBtn = calendarContainer.querySelector('.dp__prev_btn');
-                            let nextBtn = calendarContainer.querySelector('.dp__next_btn');
-                            
-                            if (prevBtn && nextBtn) {
-                                return { prevBtn, nextBtn };
-                            }
-                            
-                            // 其次嘗試 Element UI / Plus 等常見框架類別
-                            prevBtn = calendarContainer.querySelector('.el-datepicker__prev-btn, .el-icon-arrow-left');
-                            nextBtn = calendarContainer.querySelector('.el-datepicker__next-btn, .el-icon-arrow-right');
-                            if (prevBtn && nextBtn) {
-                                return { prevBtn, nextBtn };
-                            }
-                            
-                            // 最末級備用：遍歷子元素特徵比對 (注意使用 getAttribute 防止 SVG 元素 className 拋錯)
-                            const children = Array.from(calendarContainer.querySelectorAll('*'));
-                            for (const el of children) {
-                                const text = (el.innerText || "").trim();
-                                const className = el.getAttribute('class') || "";
-                                const isPrev = text === '<' || text === '‹' || text === '«' || 
-                                               className.includes('prev') || className.includes('left') || 
-                                               className.includes('arrow-left') || className.includes('chevron-left');
-                                const isNext = text === '>' || text === '›' || text === '»' || 
-                                               className.includes('next') || className.includes('right') || 
-                                               className.includes('arrow-right') || className.includes('chevron-right');
-                                if (isPrev && !prevBtn) prevBtn = el;
-                                if (isNext) nextBtn = el;
-                            }
-                            
-                            if (!prevBtn || !nextBtn) {
-                                const buttons = Array.from(calendarContainer.querySelectorAll('button, span, i, div')).filter(el => {
-                                    const rect = el.getBoundingClientRect();
-                                    return rect.width > 0 && rect.height > 0 && window.getComputedStyle(el).cursor === 'pointer';
-                                });
-                                if (buttons.length >= 2) {
-                                    prevBtn = buttons[0];
-                                    nextBtn = buttons[buttons.length - 1];
+                        try {
+                            const triggerClick = (el) => {
+                                if (!el) return;
+                                if (typeof el.click === 'function') {
+                                    el.click();
+                                } else {
+                                    el.dispatchEvent(new MouseEvent('click', {
+                                        bubbles: true,
+                                        cancelable: true,
+                                        view: window
+                                    }));
                                 }
-                            }
-                            return { prevBtn, nextBtn };
-                        };
-                        
-                        const getDisplayedYearMonth = (calendarContainer) => {
-                            const text = calendarContainer.innerText || "";
-                            const yearMatch = text.match(/(\d{4})年?/);
-                            const monthMatch = text.match(/(\d{1,2})月/);
-                            if (yearMatch && monthMatch) {
-                                return {
-                                    year: parseInt(yearMatch[1], 10),
-                                    month: parseInt(monthMatch[1], 10)
-                                };
-                            }
-                            return null;
-                        };
-                        
-                        // 3. 開始切換年份與月份 (採用面板直選，速度快且 100% 穩定，避免連續點擊前一月超時)
-                        console.log("正在打開年份選擇器...");
-                        const yearBtn = Array.from(container.querySelectorAll('button')).find(btn => 
-                            (btn.getAttribute('aria-label') || "").includes("年份") || 
-                            (btn.getAttribute('data-test') || "").includes("year") ||
-                            /^\d{4}年?$/.test(btn.innerText.trim())
-                        );
-                        
-                        if (!yearBtn) {
-                            throw new Error("找不到年份選擇按鈕");
-                        }
-                        
-                        triggerClick(yearBtn);
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                        
-                        // 在年份面板中點選目標年份
-                        const targetYearText = `${startYear}年`;
-                        const targetYearBtn = Array.from(container.querySelectorAll('*')).find(el => {
-                            const text = (el.innerText || "").trim();
-                            return (text === targetYearText || text === startYear.toString()) && el.children.length === 0;
-                        });
-                        
-                        if (!targetYearBtn) {
-                            throw new Error("找不到目標年份單元格: " + startYear);
-                        }
-                        
-                        console.log("已找到並點選目標年份: " + startYear);
-                        triggerClick(targetYearBtn);
-                        await new Promise(resolve => setTimeout(resolve, 300));
-                        
-                        // 點選目標月份 (如果年份點選後沒有自動開啟月份面板，則主動點擊月份按鈕)
-                        let monthBtn = Array.from(container.querySelectorAll('button')).find(btn => 
-                            (btn.getAttribute('aria-label') || "").includes("月份") || 
-                            (btn.getAttribute('data-test') || "").includes("month") ||
-                            /^\d{1,2}月$/.test(btn.innerText.trim())
-                        );
-                        
-                        if (monthBtn) {
-                            console.log("主動開啟月份選擇器...");
-                            triggerClick(monthBtn);
-                            await new Promise(resolve => setTimeout(resolve, 300));
-                        }
-                        
-                        // 在月份面板中點選目標月份
-                        const targetMonthText = `${startMonth}月`;
-                        const targetMonthBtn = Array.from(container.querySelectorAll('*')).find(el => {
-                            const text = (el.innerText || "").trim();
-                            return (text === targetMonthText || text === startMonth.toString()) && el.children.length === 0;
-                        });
-                        
-                        if (!targetMonthBtn) {
-                            throw new Error("找不到目標月份單元格: " + startMonth);
-                        }
-                        
-                        console.log("已找到並點選目標月份: " + startMonth);
-                        triggerClick(targetMonthBtn);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        
-                        // 4. 定位並點擊起始日與結束日 (優先採用 Vue Datepicker 特有單元格)
-                        const getActiveDays = (calendarContainer) => {
-                            // 優先嘗試 `@vuepic/vue-datepicker` 單元格點選元素 `.dp__cell_inner`
-                            const vuepicDays = Array.from(calendarContainer.querySelectorAll('.dp__cell_inner')).filter(el => {
-                                const className = el.getAttribute('class') || "";
-                                return !className.includes('disabled') && !className.includes('offset');
+                            };
+                            
+                            const inputs = Array.from(document.querySelectorAll('input'));
+                            const dateInput = inputs.find(el => {
+                                const placeholder = (el.getAttribute("placeholder") || "").toLowerCase();
+                                const name = (el.getAttribute("name") || "").toLowerCase();
+                                const id = (el.getAttribute("id") || "").toLowerCase();
+                                const className = (el.getAttribute("class") || "").toLowerCase();
+                                return ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄'].some(kw => 
+                                    placeholder.includes(kw) || name.includes(kw) || id.includes(kw) || className.includes(kw)
+                                );
                             });
                             
-                            if (vuepicDays.length >= 28) {
-                                return vuepicDays;
+                            let container = document.querySelector('.dp__menu') || document.querySelector('.dp__outer_menu_wrap');
+                            if (!container) {
+                                const els = Array.from(document.querySelectorAll('*'));
+                                container = els.find(el => {
+                                    const rect = el.getBoundingClientRect();
+                                    if (rect.width === 0 || rect.height === 0) return false;
+                                    const style = window.getComputedStyle(el);
+                                    if (style.display === 'none' || style.visibility === 'hidden') return false;
+                                    if (el.tagName !== 'DIV') return false;
+                                    const text = el.innerText || "";
+                                    return text.includes("週一") && text.includes("週二") && text.includes("週日") && el.querySelectorAll('div').length > 5;
+                                });
                             }
                             
-                            // 其次嘗試 Element UI / Plus 等一般單元格元素
-                            const elDays = Array.from(calendarContainer.querySelectorAll('.el-date-table__row td:not(.disabled):not(.next-month):not(.prev-month)'));
-                            if (elDays.length >= 28) {
-                                return elDays;
-                            }
+                            if (!container) throw new Error("找不到彈出的日曆選單 DOM");
                             
-                            // 最末級備用：純數字葉子節點進行類別特徵排除
-                            const allEls = Array.from(calendarContainer.querySelectorAll('*'));
-                            const candidates = allEls.filter(el => {
+                            container.style.pointerEvents = 'auto';
+                            container.querySelectorAll('*').forEach(el => {
+                                el.style.pointerEvents = 'auto';
+                            });
+                            
+                            console.log("正在打開年份選擇器...");
+                            const yearBtn = Array.from(container.querySelectorAll('button')).find(btn => 
+                                (btn.getAttribute('aria-label') || "").includes("年份") || 
+                                (btn.getAttribute('data-test') || "").includes("year") ||
+                                /^\d{4}年?$/.test(btn.innerText.trim())
+                            );
+                            
+                            if (!yearBtn) throw new Error("找不到年份選擇按鈕");
+                            triggerClick(yearBtn);
+                            await new Promise(resolve => setTimeout(resolve, 400));
+                            
+                            const targetYearText = `${startYear}年`;
+                            const targetYearBtn = Array.from(container.querySelectorAll('*')).find(el => {
                                 const text = (el.innerText || "").trim();
-                                const val = parseInt(text, 10);
-                                return !isNaN(val) && val >= 1 && val <= 31 && text === val.toString() && el.children.length === 0;
+                                return (text === targetYearText || text === startYear.toString()) && el.children.length === 0;
                             });
                             
-                            return candidates.filter(el => {
-                                const className = el.getAttribute('class') || "";
-                                const parentClassName = el.parentElement ? (el.parentElement.getAttribute('class') || "") : "";
-                                const grandparentClassName = el.parentElement && el.parentElement.parentElement ? (el.parentElement.parentElement.getAttribute('class') || "") : "";
-                                
-                                const isOutside = className.includes('prev') || className.includes('next') || 
-                                                  className.includes('off') || className.includes('outside') ||
-                                                  className.includes('disabled') || className.includes('grey') || className.includes('offset') ||
-                                                  parentClassName.includes('prev') || parentClassName.includes('next') ||
-                                                  parentClassName.includes('off') || parentClassName.includes('outside') ||
-                                                  parentClassName.includes('grey') || parentClassName.includes('offset');
-                                                  
-                                return !isOutside;
+                            if (!targetYearBtn) throw new Error("找不到目標年份單元格: " + startYear);
+                            console.log("已選擇目標年份: " + startYear);
+                            triggerClick(targetYearBtn);
+                            await new Promise(resolve => setTimeout(resolve, 400));
+                            
+                            let monthBtn = Array.from(container.querySelectorAll('button')).find(btn => 
+                                (btn.getAttribute('aria-label') || "").includes("月份") || 
+                                (btn.getAttribute('data-test') || "").includes("month") ||
+                                /^\d{1,2}月$/.test(btn.innerText.trim())
+                            );
+                            
+                            if (monthBtn) {
+                                console.log("主動開啟月份選擇器...");
+                                triggerClick(monthBtn);
+                                await new Promise(resolve => setTimeout(resolve, 400));
+                            }
+                            
+                            const targetMonthText = `${startMonth}月`;
+                            const targetMonthBtn = Array.from(container.querySelectorAll('*')).find(el => {
+                                const text = (el.innerText || "").trim();
+                                return (text === targetMonthText || text === startMonth.toString()) && el.children.length === 0;
                             });
-                        };
-                        
-                        const activeDays = getActiveDays(container);
-                        const startEl = activeDays.find(el => parseInt(el.innerText, 10) === startDay);
-                        const endEl = activeDays.find(el => parseInt(el.innerText, 10) === endDay);
-                        
-                        if (!startEl || !endEl) {
-                            throw new Error("找不到本月對應的日單元格: 起日=" + startDay + ", 迄日=" + endDay);
+                            
+                            if (!targetMonthBtn) throw new Error("找不到目標月份單元格: " + startMonth);
+                            console.log("已選擇目標月份: " + startMonth);
+                            triggerClick(targetMonthBtn);
+                            await new Promise(resolve => setTimeout(resolve, 600));
+                            
+                            const getActiveDays = (calendarContainer) => {
+                                const vuepicDays = Array.from(calendarContainer.querySelectorAll('.dp__cell_inner')).filter(el => {
+                                    const className = el.getAttribute('class') || "";
+                                    return !className.includes('disabled') && !className.includes('offset');
+                                });
+                                if (vuepicDays.length >= 28) return vuepicDays;
+                                
+                                const allEls = Array.from(calendarContainer.querySelectorAll('*'));
+                                return allEls.filter(el => {
+                                    const text = (el.innerText || "").trim();
+                                    const val = parseInt(text, 10);
+                                    return !isNaN(val) && val >= 1 && val <= 31 && text === val.toString() && el.children.length === 0;
+                                });
+                            };
+                            
+                            const activeDays = getActiveDays(container);
+                            const startEl = activeDays.find(el => parseInt(el.innerText, 10) === startDay);
+                            const endEl = activeDays.find(el => parseInt(el.innerText, 10) === endDay);
+                            
+                            if (!startEl || !endEl) throw new Error("找不到本月對應的日單元格");
+                            
+                            triggerClick(startEl);
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            triggerClick(endEl);
+                            await new Promise(resolve => setTimeout(resolve, 600));
+                            
+                            return { success: true, finalValue: dateInput ? dateInput.value : "" };
+                        } finally {
+                            document.querySelectorAll('*').forEach(el => {
+                                el.style.pointerEvents = 'auto';
+                            });
                         }
-                        
-                        triggerClick(startEl);
-                        await new Promise(resolve => setTimeout(resolve, 250));
-                        
-                        triggerClick(endEl);
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        
-                        return {
-                            success: true,
-                            finalValue: dateInput.value
-                        };
                     }
                     """
+                    
                     try:
                         res = page.evaluate(js_script, {
                             "startYear": target_year,
@@ -524,77 +434,49 @@ def run_browser_automation():
                             "startDay": target_start_day,
                             "endDay": target_end_day
                         })
-                        print(f"[爬蟲] 點擊日曆完成！目前輸入欄位值為: {res.get('finalValue')}")
-                        page.wait_for_timeout(500)
-                        try:
-                            page.keyboard.press("Escape")
-                            page.wait_for_timeout(300)
-                        except Exception:
-                            pass
+                        print(f"[爬蟲] 點選日曆完成！目前輸入欄位值為: {res.get('finalValue')}")
+                        page.wait_for_timeout(300)
                     except Exception as je:
-                        current_url = page.url
-                        screenshot_path = os.path.join("data", "error_screenshot.png")
+                        print(f"[警告] 點選日曆模擬出錯: {je}")
+                        # 降級採用直接 value 寫入與 input/change 觸發
                         try:
-                            page.screenshot(path=screenshot_path)
-                            print(f"[除錯] 點擊日曆失敗時網頁 URL 為: {current_url}")
-                            print(f"[除錯] 錯誤訊息為: {je}")
-                            print(f"[除錯] 已儲存錯誤截圖至: {screenshot_path}")
-                        except Exception as se:
-                            print(f"[除錯] 儲存截圖或列印除錯資訊失敗: {se}")
-                            
-                        # 如果是歷史年份 (比如 2025) 且發生上下文銷毀或找不到輸入框，代表已被大平台強制重置（已達查詢最早極限）
-                        if target_year < datetime.now().year and ("context was destroyed" in str(je) or "navigation" in str(je) or "找不到日期輸入框" in str(je)):
-                            print(f"\n[爬蟲] 偵測到大平台拒絕了歷史年份 {target_year} 年的日期 {m_start} ~ {m_end} 並強制重置頁面。")
-                            print("       這代表已到達您個人載具在大平台允許查詢的最早歷史極限！")
-                            print("       系統將安全結束歷史抓取，並自動開始整合清洗已下載的 2026 年份資料...\n")
-                            break
-                            
-                        # 檢查是否為執行上下文被銷毀的導航錯誤，如果是，等候 1.5 秒並重試一次！
-                        if "context was destroyed" in str(je) or "navigation" in str(je):
-                            print("[提示] 偵測到網頁背景導航重載，正在等待網頁穩定並進行二次重試...")
-                            page.wait_for_timeout(1500)
-                            try:
-                                res = page.evaluate(js_script, {
-                                    "startYear": target_year,
-                                    "startMonth": target_month,
-                                    "startDay": target_start_day,
-                                    "endDay": target_end_day
-                                })
-                                print(f"[爬蟲] [二次重試成功] 點擊日曆完成！目前輸入欄位值為: {res.get('finalValue')}")
-                                page.wait_for_timeout(500)
-                                try:
-                                    page.keyboard.press("Escape")
-                                    page.wait_for_timeout(300)
-                                except Exception:
-                                    pass
-                            except Exception as re_je:
-                                print(f"[警告] 二次重試點擊日曆失敗: {re_je}。將降級採用文字直接填充...")
-                                date_input = date_inputs[0]
-                                date_input.click()
-                                page.keyboard.press("Control+A")
-                                page.keyboard.press("Backspace")
-                                date_range_str = f"{m_start} ~ {m_end}"
-                                date_input.fill(date_range_str)
-                                page.wait_for_timeout(300)
-                                try:
-                                    page.keyboard.press("Escape")
-                                    page.wait_for_timeout(300)
-                                except Exception:
-                                    pass
-                        else:
-                            print(f"[警告] 自動模擬點擊日曆失敗: {je}。將降級採用文字直接填充...")
-                            date_input = date_inputs[0]
-                            date_input.click()
-                            page.keyboard.press("Control+A")
-                            page.keyboard.press("Backspace")
-                            date_range_str = f"{m_start} ~ {m_end}"
-                            date_input.fill(date_range_str)
-                            page.wait_for_timeout(300)
-                            try:
-                                page.keyboard.press("Escape")
-                                page.wait_for_timeout(300)
-                            except Exception:
-                                pass
+                            fallback_js = r"""
+                            async (args) => {
+                                const { startYear, startMonth, endDay } = args;
+                                const formatNum = (n) => n.toString().padStart(2, '0');
+                                const startStr = `${startYear}/${formatNum(startMonth)}/01`;
+                                const endStr = `${startYear}/${formatNum(startMonth)}/${formatNum(endDay)}`;
+                                const dateRangeStr = `${startStr} ~ ${endStr}`;
+                                
+                                const inputs = Array.from(document.querySelectorAll('input'));
+                                const dateInput = inputs.find(el => {
+                                    const placeholder = (el.getAttribute("placeholder") || "").toLowerCase();
+                                    const name = (el.getAttribute("name") || "").toLowerCase();
+                                    const id = (el.getAttribute("id") || "").toLowerCase();
+                                    const className = (el.getAttribute("class") || "").toLowerCase();
+                                    return ['date', 'range', '日期', '起迄', '開始', '結束', '選擇', '起', '迄'].some(kw => 
+                                        placeholder.includes(kw) || name.includes(kw) || id.includes(kw) || className.includes(kw)
+                                    );
+                                });
+                                
+                                if (!dateInput) throw new Error("找不到日期輸入框");
+                                dateInput.removeAttribute('readonly');
+                                dateInput.focus();
+                                dateInput.value = dateRangeStr;
+                                dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                dateInput.dispatchEvent(new Event('blur', { bubbles: true }));
+                                return { success: true, finalValue: dateInput.value };
+                            }
+                            """
+                            res = page.evaluate(fallback_js, {
+                                "startYear": target_year,
+                                "startMonth": target_month,
+                                "endDay": target_end_day
+                            })
+                            print(f"[爬蟲] 採用直接寫入日期欄位完成：{res.get('finalValue')}")
+                        except Exception as re_e:
+                            print(f"[警告] 降級直接寫入日期也失敗: {re_e}")
                 # 情況 B：兩個獨立的起、迄輸入框
                 elif len(date_inputs) >= 2:
                     date_inputs[0].click()
@@ -619,25 +501,49 @@ def run_browser_automation():
                     
                 # 驗證輸入值是否被平台重置（防範日期超出範圍被平台強制回彈）
                 verified = True
-                page.wait_for_timeout(200) # 給網頁短暫時間反應
+                page.wait_for_timeout(300) # 給網頁短暫時間反應
                 
-                def to_digits(s):
+                def extract_date_parts(s):
                     import re
-                    return re.sub(r'\D', '', str(s))
+                    nums = re.findall(r'\d+', str(s))
+                    if len(nums) >= 6:
+                        return [
+                            (int(nums[0]), int(nums[1]), int(nums[2])),
+                            (int(nums[3]), int(nums[4]), int(nums[5]))
+                        ]
+                    elif len(nums) >= 3:
+                        return [(int(nums[0]), int(nums[1]), int(nums[2]))]
+                    return []
                 
-                # 動態計算去除前導零的純數字，以精準相容網頁端顯示的「2026年5月1日」（無前導零）
-                target_start_dt_digits = f"{target_year}{target_month}{target_start_day}"
-                target_end_dt_digits = f"{target_year}{target_month}{target_end_day}"
-                
-                if len(date_inputs) == 1:
-                    val_digits = to_digits(date_inputs[0].input_value() or "")
-                    if target_start_dt_digits not in val_digits or target_end_dt_digits not in val_digits:
-                        verified = False
-                elif len(date_inputs) >= 2:
-                    val_start_digits = to_digits(date_inputs[0].input_value() or "")
-                    val_end_digits = to_digits(date_inputs[1].input_value() or "")
-                    if target_start_dt_digits not in val_start_digits or target_end_dt_digits not in val_end_digits:
-                        verified = False
+                try:
+                    if len(date_inputs) == 1:
+                        actual_value = date_inputs[0].input_value() or ""
+                        actual_parts = extract_date_parts(actual_value)
+                        if len(actual_parts) >= 2:
+                            act_start, act_end = actual_parts[0], actual_parts[1]
+                            expected_start = (target_year, target_month, target_start_day)
+                            expected_end = (target_year, target_month, target_end_day)
+                            
+                            if act_start != expected_start or act_end != expected_end:
+                                verified = False
+                        else:
+                            verified = False
+                    elif len(date_inputs) >= 2:
+                        start_parts = extract_date_parts(date_inputs[0].input_value() or "")
+                        end_parts = extract_date_parts(date_inputs[1].input_value() or "")
+                        if len(start_parts) >= 1 and len(end_parts) >= 1:
+                            act_start = start_parts[0]
+                            act_end = end_parts[0]
+                            expected_start = (target_year, target_month, target_start_day)
+                            expected_end = (target_year, target_month, target_end_day)
+                            
+                            if act_start != expected_start or act_end != expected_end:
+                                verified = False
+                        else:
+                            verified = False
+                except Exception as ve:
+                    print(f"[除錯] 日期校驗發生異常: {ve}")
+                    verified = False
                         
                 if not verified:
                     print(f"\n[警告] 偵測到輸入的日期 {m_start} ~ {m_end} 與網頁實際日期不符！")
@@ -694,6 +600,40 @@ def run_browser_automation():
             try:
                 page.wait_for_selector("input[type='checkbox']", timeout=8000)
                 page.wait_for_timeout(1000)
+                
+                # 新增：設定顯示筆數為 100 筆並點選『執行』按鈕，確保能一鍵帶走單月所有發票（預防僅載入預設的 10 筆）
+                print("[爬蟲] 正在自動調整每頁顯示筆數至 100 筆並點選『執行』...")
+                try:
+                    js_pagination = """
+                    () => {
+                        const sel = document.querySelector("select#SelectSizes");
+                        if (!sel) return "NO_SELECT";
+                        if (sel.value === "100") return "ALREADY_100";
+                        
+                        sel.value = "100";
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        const btn = document.querySelector("select#SelectSizes + button");
+                        if (btn) {
+                            btn.click();
+                            return "OK";
+                        }
+                        return "NO_BUTTON";
+                    }
+                    """
+                    res_pag = page.evaluate(js_pagination)
+                    print(f"[爬蟲] 顯示筆數調整狀態: {res_pag}")
+                    if res_pag == "OK":
+                        print("[爬蟲] 已成功提交 100 筆顯示變更，正在等待發票列表重載...")
+                        page.wait_for_timeout(3000)
+                        page.wait_for_selector("input[type='checkbox']", timeout=15000)
+                        page.wait_for_timeout(800)
+                    elif res_pag == "ALREADY_100":
+                        print("[爬蟲] 已經是 100 筆，無須變更。")
+                    else:
+                        print(f"[提示] 未能成功調整顯示筆數：{res_pag}")
+                except Exception as se:
+                    print(f"[提示] 自動調整顯示筆數略過 (將採用網頁預設顯示): {se}")
             except Exception as e:
                 print(f"[提示] 此月份無勾選框，可能該區間內無發票資料。")
     

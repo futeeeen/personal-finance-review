@@ -80,6 +80,17 @@ function App() {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [expandedRefundInvoices, setExpandedRefundInvoices] = useState({});
   
+  // 分類明細彈出視窗狀態
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [expandedCategoryInvoices, setExpandedCategoryInvoices] = useState({});
+  
+  const handleCategoryClick = (categoryName) => {
+    setSelectedCategory(categoryName);
+    setShowCategoryModal(true);
+    setExpandedCategoryInvoices({});
+  };
+  
   // 獲取過去幾個月前的年月日字串 (格式 YYYY-MM-DD)
   const getPastDateStr = (monthsAgo) => {
     const d = new Date();
@@ -415,6 +426,18 @@ function App() {
   // 計算熱力圖最大交易張數，用來換算相對透明度
   const maxHeatmapCount = heatmap.reduce((max, cell) => cell.count > max ? cell.count : max, 0);
 
+  // 聚合星期熱力圖資料
+  const weekdayData = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'].map(day => {
+    const dayCells = heatmap.filter(c => c.weekday === day);
+    const totalCount = dayCells.reduce((sum, c) => sum + c.count, 0);
+    const totalAmount = dayCells.reduce((sum, c) => sum + c.amount, 0);
+    return {
+      weekday: day,
+      count: totalCount,
+      amount: totalAmount
+    };
+  });
+
   return (
     <div className="dashboard-wrapper">
       
@@ -674,6 +697,12 @@ function App() {
                     paddingAngle={3}
                     dataKey="amount"
                     nameKey="category"
+                    onClick={(data) => {
+                      if (data && data.category) {
+                        handleCategoryClick(data.category);
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
                   >
                     {categories.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.category] || CATEGORY_COLORS['其它']} />
@@ -696,7 +725,29 @@ function App() {
             {/* 圓餅圖圖例與比例數據 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', width: '100%', padding: '0.5rem' }}>
               {categories.map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+                <div 
+                  key={idx} 
+                  onClick={() => handleCategoryClick(item.category)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem', 
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '6px',
+                    transition: 'all 0.2s',
+                    background: 'rgba(255,255,255,0.01)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                    e.currentTarget.style.transform = 'translateX(2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.01)';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
+                >
                   <div style={{ 
                     width: '10px', 
                     height: '10px', 
@@ -783,85 +834,70 @@ function App() {
           </div>
         </div>
 
-        {/* 時段熱力圖 */}
+        {/* 星期熱力圖 */}
         <div className="glass-card">
           <div className="chart-header">
             <h3 className="chart-title">
               <Calendar size={18} />
-              特定時段消費熱力圖 (星期 vs 時段)
+              星期消費熱力分佈圖 (週一 至 週日)
             </h3>
           </div>
           
-          <div className="heatmap-container">
-            <div className="heatmap-legend">
+          <div className="heatmap-container" style={{ padding: '1rem 0 0.5rem 0' }}>
+            <div className="heatmap-legend" style={{ marginBottom: '1.25rem' }}>
               <span>少交易</span>
               <div className="legend-bar"></div>
               <span>多交易</span>
             </div>
             
-            <div className="heatmap-grid-scroll">
-              <div className="heatmap-grid">
-                {/* 頂部星期標頭 */}
-                <div className="heatmap-header-cell">時段 \ 星期</div>
-                <div className="heatmap-header-cell">週一</div>
-                <div className="heatmap-header-cell">週二</div>
-                <div className="heatmap-header-cell">週三</div>
-                <div className="heatmap-header-cell">週四</div>
-                <div className="heatmap-header-cell">週五</div>
-                <div className="heatmap-header-cell">週六</div>
-                <div className="heatmap-header-cell">週日</div>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(7, 1fr)', 
+              gap: '0.75rem', 
+              width: '100%',
+              minWidth: '320px'
+            }}>
+              {weekdayData.map((dayData, idx) => {
+                const maxWeekdayCount = Math.max(...weekdayData.map(d => d.count), 1);
+                const opacity = dayData.count > 0 ? (dayData.count / maxWeekdayCount) * 0.8 + 0.15 : 0.05;
+                const hasData = dayData.count > 0;
                 
-                {/* 時段列渲染 */}
-                {['早餐 (06-11)', '午餐 (11-14)', '下午茶 (14-17)', '晚餐 (17-21)', '深夜 (21-06)'].map((p, pIdx) => (
-                  <React.Fragment key={pIdx}>
-                    {/* 左側時段標籤 */}
-                    <div className="heatmap-label-cell">
-                      {p.split(' ')[0]}
-                    </div>
+                return (
+                  <div 
+                    key={idx}
+                    className="heatmap-block"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem',
+                      height: '80px',
+                      borderRadius: '10px',
+                      backgroundColor: hasData ? `rgba(99, 102, 241, ${opacity})` : 'rgba(255, 255, 255, 0.02)',
+                      color: hasData ? '#fff' : 'rgba(255, 255, 255, 0.2)',
+                      border: hasData ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)',
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{dayData.weekday}</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{dayData.count > 0 ? `${dayData.count}張` : '0張'}</span>
                     
-                    {/* 星期一至日各區塊 */}
-                    {['週一', '週二', '週三', '週四', '週五', '週六', '週日'].map((w, wIdx) => {
-                      const cell = heatmap.find(c => c.weekday === w && c.period === p) || { count: 0, amount: 0 };
-                      
-                      // 依據 count 計算熱力圖背景深淺度
-                      const opacity = maxHeatmapCount > 0 ? (cell.count / maxHeatmapCount) * 0.8 + 0.15 : 0.06;
-                      const hasData = cell.count > 0;
-                      
-                      return (
-                        <div 
-                          key={wIdx} 
-                          className="heatmap-block"
-                          style={{
-                            backgroundColor: hasData ? `rgba(99, 102, 241, ${opacity})` : 'rgba(255, 255, 255, 0.02)',
-                            color: hasData ? '#fff' : 'rgba(255, 255, 255, 0.15)',
-                            border: hasData ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid rgba(255, 255, 255, 0.03)'
-                          }}
-                        >
-                          {cell.count > 0 ? cell.count : ''}
-                          
-                          {/* 懸停工具提示 */}
-                          <div className="heatmap-tooltip">
-                            <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>{w} • {p.split(' ')[0]}</div>
-                            <div>交易張數: {cell.count} 張</div>
-                            <div>累計金額: {formatCurrency(cell.amount)}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </React.Fragment>
-                ))}
-              </div>
+                    {/* 懸停工具提示 */}
+                    <div className="heatmap-tooltip">
+                      <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>{dayData.weekday}消費統計</div>
+                      <div>交易張數: {dayData.count} 張</div>
+                      <div>累計金額: {formatCurrency(dayData.amount)}</div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.5rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Info size={12} />
-                <span>格內數字代表交易發票張數，滑鼠移入格內可查看該時段累計消費總金額。</span>
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: '0.25rem', opacity: 0.85 }}>
-                <AlertTriangle size={12} style={{ color: '#ef4444' }} />
-                <span>註：財政部官網匯出的載具 CSV 明細檔案「未包含交易時間」，因此匯入後系統預設時間為 12:00:00，故熱力圖會集中在午餐時段呈現（此為財政部原始資料之限制）。</span>
-              </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '1.25rem' }}>
+              <Info size={12} />
+              <span>格內數字為該星期的累積發票張數，滑鼠移入各個星期可檢視該日的累計消費總金額與發票數量。</span>
             </div>
           </div>
         </div>
@@ -1253,6 +1289,209 @@ function App() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
               <button 
                 onClick={() => setShowRefundModal(false)}
+                className="chart-btn active"
+                style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
+              >
+                關閉視窗
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 分類明細彈出視窗 (Category Details Modal) */}
+      {showCategoryModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(12px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem',
+          animation: 'fadeIn 0.25s ease'
+        }} onClick={() => setShowCategoryModal(false)}>
+          <div className="glass-card" style={{
+            maxWidth: '850px',
+            width: '100%',
+            maxHeight: '85vh',
+            padding: '2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(30, 41, 59, 0.7)',
+            overflow: 'hidden'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div 
+                  className="kpi-icon-container" 
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    borderRadius: '10px',
+                    backgroundColor: `${CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']}20`,
+                    color: CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']
+                  }}
+                >
+                  <Receipt size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
+                    【{selectedCategory}】消費明細清單
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    本地發票庫累計消費：{formatCurrency(categories.find(c => c.category === selectedCategory)?.amount || 0)}，共 {invoices.filter(inv => inv.items.some(item => item.category === selectedCategory)).length} 筆發票
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowCategoryModal(false)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: 'none',
+                  color: '#fff',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content - Invoices Scroll Area */}
+            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {invoices.filter(inv => inv.items.some(item => item.category === selectedCategory)).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <HelpCircle size={48} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                  <p>目前此分類下查無消費記錄</p>
+                </div>
+              ) : (
+                invoices.filter(inv => inv.items.some(item => item.category === selectedCategory)).map((inv) => {
+                  const isExpanded = expandedCategoryInvoices[inv.invNum] || false;
+                  
+                  // 計算該發票中屬於 selectedCategory 的品項金額總和
+                  const categorySum = inv.items
+                    .filter(item => item.category === selectedCategory)
+                    .reduce((sum, item) => sum + item.amount, 0);
+
+                  return (
+                    <div key={inv.invNum} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div 
+                        className="invoice-item-row"
+                        onClick={() => setExpandedCategoryInvoices(prev => ({ ...prev, [inv.invNum]: !prev[inv.invNum] }))}
+                        style={{ 
+                          cursor: 'pointer',
+                          borderLeft: `4px solid ${CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']}`,
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div className="invoice-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div className="invoice-icon" style={{ color: CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它'] }}>
+                            <Receipt size={18} />
+                          </div>
+                          <div className="invoice-main-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span className="invoice-seller" style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
+                            <div className="invoice-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{inv.invNum}</span>
+                              <span>•</span>
+                              <span>{inv.date} {inv.invTime} ({inv.weekday})</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="invoice-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                          <span className="invoice-amount-display normal" style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
+                            {formatCurrency(categorySum)}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <span>此類別含 {inv.items.filter(item => item.category === selectedCategory).length} 項商品</span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expandable items table */}
+                      {isExpanded && (
+                        <div style={{ 
+                          background: 'rgba(255, 255, 255, 0.01)',
+                          border: '1px solid rgba(255, 255, 255, 0.03)',
+                          borderRadius: '12px',
+                          padding: '1rem',
+                          marginLeft: '0.25rem',
+                          marginBottom: '0.5rem',
+                          animation: 'fadeIn 0.2s ease'
+                        }}>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}>
+                                  <th style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>商品品項</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'center' }}>數量</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>單價</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>金額</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {inv.items.filter(item => item.category === selectedCategory).map((item, itemIdx) => (
+                                  <tr key={itemIdx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                                    <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
+                                      {item.itemName}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                      {item.qty}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                                      {formatCurrency(item.price)}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', fontWeight: 600, color: item.amount < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                                      {formatCurrency(item.amount)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+              <button 
+                onClick={() => setShowCategoryModal(false)}
                 className="chart-btn active"
                 style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
               >

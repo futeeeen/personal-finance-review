@@ -735,3 +735,183 @@ h1, h2, h3, h4 {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+
+/* ==========================================================================
+   MULTI-THEME COLOR SCHEMES & ACCENTS
+   ========================================================================== */
+
+/* Theme 1: Default Glass Dark (Defined in :root, let's define cat variables on :root) */
+:root {
+  --cat-food: #6366f1;
+  --cat-trans: #38bdf8;
+  --cat-ent: #ec4899;
+  --cat-electronics: #f59e0b;
+  --cat-cloth: #a855f7;
+  --cat-med: #10b981;
+  --cat-other: #64748b;
+}
+
+/* Theme 2: Cyberpunk Neon (賽博霓虹) */
+body.theme-cyberpunk {
+  --bg-primary: #050508;
+  --bg-secondary: #0a0a0f;
+  --bg-card: rgba(10, 10, 15, 0.85);
+  --bg-card-hover: rgba(20, 20, 30, 0.95);
+  --border-color: rgba(0, 240, 255, 0.15);
+  --border-glow: rgba(255, 0, 127, 0.2);
+  
+  --text-primary: #00ffcc;
+  --text-secondary: #ff007f;
+  --text-muted: #71717a;
+  
+  --primary: #00f0ff;       /* Neon Cyan */
+  --primary-glow: rgba(0, 240, 255, 0.3);
+  --secondary: #ff007f;     /* Neon Pink */
+  --secondary-glow: rgba(255, 0, 127, 0.35);
+  --accent: #fffb00;        /* Electric Yellow */
+  --accent-glow: rgba(255, 251, 0, 0.2);
+  --warning: #f97316;
+  --danger: #ef4444;
+  
+  --gradient-main: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%);
+  --gradient-card: linear-gradient(180deg, rgba(10, 10, 15, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%);
+  --gradient-glow: radial-gradient(circle at 50% -20%, rgba(255, 0, 127, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+
+  /* Category colors optimized for Cyberpunk */
+  --cat-food: #00f0ff;
+  --cat-trans: #38bdf8;
+  --cat-ent: #ff007f;
+  --cat-electronics: #fffb00;
+  --cat-cloth: #bd00ff;
+  --cat-med: #00ffcc;
+  --cat-other: #71717a;
+  
+  color-scheme: dark;
+}
+
+body.theme-cyberpunk {
+  background-color: #050508;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 240, 255, 0.08) 0px, transparent 45%),
+    radial-gradient(at 100% 100%, rgba(255, 0, 127, 0.08) 0px, transparent 45%),
+    radial-gradient(at 50% 50%, rgba(255, 251, 0, 0.03) 0px, transparent 75%);
+}
+
+/* Theme 3: Nordic Emerald Light (北歐極簡森林綠) */
+body.theme-emerald-light {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(15, 118, 110, 0.08);
+  --border-glow: rgba(13, 148, 136, 0.05);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  --primary: #0f766e;       /* Emerald */
+  --primary-glow: rgba(15, 118, 110, 0.15);
+  --secondary: #0d9488;     /* Teal */
+  --secondary-glow: rgba(13, 148, 136, 0.12);
+  --accent: #0284c7;        /* sky blue */
+  --accent-glow: rgba(2, 132, 199, 0.1);
+  --warning: #d97706;
+  --danger: #dc2626;
+  
+  --gradient-main: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+  --gradient-card: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%);
+  --gradient-glow: radial-gradient(circle at 50% -20%, rgba(13, 148, 136, 0.04) 0%, rgba(0, 0, 0, 0) 70%);
+
+  /* Category colors optimized for Light Theme */
+  --cat-food: #0f766e;
+  --cat-trans: #0284c7;
+  --cat-ent: #be123c;
+  --cat-electronics: #6d28d9;
+  --cat-cloth: #b91c1c;
+  --cat-med: #047857;
+  --cat-other: #64748b;
+  
+  color-scheme: light;
+}
+
+body.theme-emerald-light {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(2, 132, 199, 0.03) 0px, transparent 50%);
+}
+
+/* Light Theme Card Shadow & Input Enhancements */
+body.theme-emerald-light .glass-card {
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(15, 118, 110, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+}
+body.theme-emerald-light .glass-card:hover {
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+}
+body.theme-emerald-light select, 
+body.theme-emerald-light input {
+  color: var(--text-primary) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(15, 118, 110, 0.15) !important;
+}
+body.theme-emerald-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Theme 4: Sunset Aurora (暮色極光) */
+body.theme-sunset-aurora {
+  --bg-primary: #0f0714;
+  --bg-secondary: #160d1d;
+  --bg-card: rgba(22, 13, 29, 0.75);
+  --bg-card-hover: rgba(30, 18, 40, 0.85);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(244, 63, 94, 0.15);
+  
+  --text-primary: #fff1f2;
+  --text-secondary: #fda4af;
+  --text-muted: #f43f5e99;
+  
+  --primary: #f43f5e;       /* Sunset Rose */
+  --primary-glow: rgba(244, 63, 94, 0.3);
+  --secondary: #fb923c;     /* Coral */
+  --secondary-glow: rgba(251, 146, 60, 0.25);
+  --accent: #fbbf24;        /* Gold */
+  --accent-glow: rgba(251, 191, 36, 0.15);
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  
+  --gradient-main: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #facc15 100%);
+  --gradient-card: linear-gradient(180deg, rgba(22, 13, 29, 0.8) 0%, rgba(15, 7, 20, 0.9) 100%);
+  --gradient-glow: radial-gradient(circle at 50% -20%, rgba(244, 63, 94, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
+
+  /* Category colors optimized for Sunset */
+  --cat-food: #f43f5e;
+  --cat-trans: #f59e0b;
+  --cat-ent: #fb7185;
+  --cat-electronics: #fbbf24;
+  --cat-cloth: #c084fc;
+  --cat-med: #2dd4bf;
+  --cat-other: #f43f5e99;
+  
+  color-scheme: dark;
+}
+
+body.theme-sunset-aurora {
+  background-color: #0f0714;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.08) 0px, transparent 45%),
+    radial-gradient(at 100% 100%, rgba(251, 191, 36, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 50%, rgba(251, 113, 133, 0.03) 0px, transparent 70%);
+}
+
+/* Common Theme Panel Styling */
+.theme-panel button:hover {
+  transform: scale(1.25) !important;
+}

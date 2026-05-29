@@ -30,18 +30,19 @@ import {
   Award,
   ChevronDown,
   ChevronUp,
-  HelpCircle
+  HelpCircle,
+  Palette
 } from 'lucide-react';
 
-// 定義分類的色彩映射
+// 定義分類的色彩映射 (對應 CSS 變數，支援風格切換時即時變色)
 const CATEGORY_COLORS = {
-  '飲食': '#6366f1',    // Indigo
-  '交通': '#38bdf8',    // Light Blue
-  '娛樂': '#ec4899',    // Pink
-  '3C配件': '#f59e0b',   // Amber
-  '服飾': '#a855f7',    // Purple
-  '醫療': '#10b981',    // Emerald
-  '其它': '#64748b'     // Slate
+  '飲食': 'var(--cat-food)',
+  '交通': 'var(--cat-trans)',
+  '娛樂': 'var(--cat-ent)',
+  '3C配件': 'var(--cat-electronics)',
+  '服飾': 'var(--cat-cloth)',
+  '醫療': 'var(--cat-med)',
+  '其它': 'var(--cat-other)'
 };
 
 // 輔助函式：將數字格式化為貨幣 NT$
@@ -54,10 +55,29 @@ const formatCurrency = (val) => {
   }).format(val);
 };
 
+const themes = [
+  { id: 'glass-dark', name: '深藍磨砂', color: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' },
+  { id: 'cyberpunk', name: '霓虹賽博', color: 'linear-gradient(135deg, #00f0ff 0%, #ff007f 100%)' },
+  { id: 'emerald-light', name: '極簡森林', color: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)' },
+  { id: 'sunset-aurora', name: '暮色極光', color: 'linear-gradient(135deg, #f43f5e 0%, #fb923c 100%)' }
+];
+
 function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // 主題風格狀態
+  const [activeTheme, setActiveTheme] = useState(() => {
+    return localStorage.getItem('finance-dashboard-theme') || 'glass-dark';
+  });
+
+  useEffect(() => {
+    const body = document.body;
+    body.className = '';
+    body.classList.add(`theme-${activeTheme}`);
+    localStorage.setItem('finance-dashboard-theme', activeTheme);
+  }, [activeTheme]);
   
   // 圖表切換狀態 (monthly / weekly)
   const [trendMode, setTrendMode] = useState('monthly');
@@ -306,7 +326,7 @@ function App() {
           gap: '1rem',
           width: '100%'
         }}>
-          <h4 style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 600 }}>您可以直接使用「一鍵同步雲端發票」功能來建立資料庫：</h4>
+          <h4 style={{ color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600 }}>您可以直接使用「一鍵同步雲端發票」功能來建立資料庫：</h4>
           
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -472,21 +492,60 @@ function App() {
             基於 Python Pandas 清洗核心 • 本地發票庫區間：{summary.minDate ? `${summary.minDate.replace(/-/g, '/')} ~ ${summary.maxDate.replace(/-/g, '/')}` : '無資料'}
           </p>
         </div>
-        {/* 新增：發票同步爬蟲控制台 */}
-        <div className="glass-card crawler-panel" style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '1.25rem', 
-          padding: '0.6rem 1.2rem', 
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          background: 'rgba(255,255,255,0.02)'
-        }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* 風格切換器 */}
+          <div className="glass-card theme-panel" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.75rem', 
+            padding: '0.6rem 1rem', 
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            background: 'rgba(255,255,255,0.02)'
+          }}>
+            <Palette size={16} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>風格：</span>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTheme(t.id)}
+                  title={t.name}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    background: t.color,
+                    border: activeTheme === t.id ? '2px solid #fff' : '2px solid transparent',
+                    boxShadow: activeTheme === t.id ? '0 0 6px var(--primary)' : 'none',
+                    cursor: 'pointer',
+                    transform: activeTheme === t.id ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'all 0.2s ease',
+                    padding: 0
+                  }}
+                />
+              ))}
+            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', marginLeft: '0.25rem' }}>
+              {themes.find(t => t.id === activeTheme)?.name}
+            </span>
+          </div>
+
+          {/* 新增：發票同步爬蟲控制台 */}
+          <div className="glass-card crawler-panel" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '1.25rem', 
+            padding: '0.6rem 1.2rem', 
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            background: 'rgba(255,255,255,0.02)'
+          }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>本地最近一筆日期</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Calendar size={14} style={{ color: 'var(--primary)' }} />
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#fff', fontFamily: 'Outfit, sans-serif' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                 {summary.maxDate ? summary.maxDate.replace(/-/g, '/') : '無資料'}
               </span>
             </div>
@@ -516,6 +575,7 @@ function App() {
             <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
             {crawlerLoading ? '正在同步...' : '同步雲端發票'}
           </button>
+        </div>
         </div>
       </div>
 
@@ -1187,7 +1247,7 @@ function App() {
                   <AlertTriangle size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>退貨明細清單</h3>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>退貨明細清單</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     本地發票庫累計退貨：{summary.totalRefundCount} 筆，金額：{formatCurrency(Math.abs(summary.totalRefundAmount))}
                   </p>
@@ -1252,7 +1312,7 @@ function App() {
                             <Receipt size={18} />
                           </div>
                           <div className="invoice-main-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <span className="invoice-seller" style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
+                            <span className="invoice-seller" style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
                             <div className="invoice-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{inv.invNum}</span>
                               <span>•</span>
@@ -1402,7 +1462,7 @@ function App() {
                   <Receipt size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     【{selectedCategory}】消費明細清單
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -1473,7 +1533,7 @@ function App() {
                             <Receipt size={18} />
                           </div>
                           <div className="invoice-main-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                            <span className="invoice-seller" style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
+                            <span className="invoice-seller" style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
                             <div className="invoice-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                               <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{inv.invNum}</span>
                               <span>•</span>
@@ -1483,7 +1543,7 @@ function App() {
                         </div>
                         
                         <div className="invoice-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                          <span className="invoice-amount-display normal" style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
+                          <span className="invoice-amount-display normal" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1.1rem' }}>
                             {formatCurrency(categorySum)}
                           </span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>

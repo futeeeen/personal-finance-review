@@ -50,9 +50,9 @@ def run_browser_automation():
         context = browser.new_context(no_viewport=True)
         page = context.new_page()
         
-        print("[爬蟲] 正在載入財政部電子發票整合服務平台首頁...")
-        # 直接進入消費者登入入口
-        page.goto("https://www.einvoice.nat.gov.tw/APCONSUMER/BTC/index")
+        print("[爬蟲] 正在載入新版財政部電子發票整合服務平台登入頁面...")
+        # 直接進入新版消費者統一登入入口
+        page.goto("https://www.einvoice.nat.gov.tw/accounts/login/mw")
         
         # 等待網頁載入
         page.wait_for_timeout(3000)

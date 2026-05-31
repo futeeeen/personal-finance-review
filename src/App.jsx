@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -31,7 +31,8 @@ import {
   ChevronDown,
   ChevronUp,
   HelpCircle,
-  Palette
+  Palette,
+  CalendarRange
 } from 'lucide-react';
 
 // 定義分類的色彩映射 (對應 CSS 變數，支援風格切換時即時變色)
@@ -53,6 +54,16 @@ const formatCurrency = (val) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(val);
+};
+
+// 輔助函式：計算給定日期的 ISO 週別 (1~53)
+const getISOWeekNumber = (dateStr) => {
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return weekNo;
 };
 
 const themes = [
@@ -109,6 +120,459 @@ function App() {
     setSelectedCategory(categoryName);
     setShowCategoryModal(true);
     setExpandedCategoryInvoices({});
+  };
+
+  // 店家明細彈出視窗狀態
+  const [showSellerModal, setShowSellerModal] = useState(false);
+  const [selectedSeller, setSelectedSeller] = useState('');
+  const [expandedSellerInvoices, setExpandedSellerInvoices] = useState({});
+  
+  // 儀表板時間區間過濾狀態
+  const [filterStartDate, setFilterStartDate] = useState('');
+  const [filterEndDate, setFilterEndDate] = useState('');
+
+  // ----------------------------------------------------
+  // 自訂日曆控制與輔助邏輯 (100% 點擊式操作，解決原生土味與輸入困擾)
+  // ----------------------------------------------------
+  const [showStartCalendar, setShowStartCalendar] = useState(false);
+  const [showEndCalendar, setShowEndCalendar] = useState(false);
+  const [startCalView, setStartCalView] = useState({ year: 2025, month: 8 });
+  const [endCalView, setEndCalView] = useState({ year: 2026, month: 4 });
+
+  useEffect(() => {
+    if (data?.summary) {
+      setFilterStartDate(data.summary.minDate || '');
+      setFilterEndDate(data.summary.maxDate || '');
+      
+      if (data.summary.minDate) {
+        const [y, m] = data.summary.minDate.split('-').map(Number);
+        setStartCalView({ year: y, month: m - 1 });
+      }
+      if (data.summary.maxDate) {
+        const [y, m] = data.summary.maxDate.split('-').map(Number);
+        setEndCalView({ year: y, month: m - 1 });
+      }
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest('.custom-calendar-container')) {
+        setShowStartCalendar(false);
+        setShowEndCalendar(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
+
+  const getCalendarDays = (year, month) => {
+    const firstDay = new Date(year, month, 1);
+    const dayOfWeek = firstDay.getDay();
+    const startDayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const totalDaysCurr = new Date(year, month + 1, 0).getDate();
+    const totalDaysPrev = new Date(year, month, 0).getDate();
+
+    const cells = [];
+
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    for (let i = startDayOffset - 1; i >= 0; i--) {
+      const d = totalDaysPrev - i;
+      cells.push({
+        day: d,
+        month: prevMonth,
+        year: prevYear,
+        isCurrentMonth: false,
+        dateStr: `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      });
+    }
+
+    for (let d = 1; d <= totalDaysCurr; d++) {
+      cells.push({
+        day: d,
+        month: month,
+        year: year,
+        isCurrentMonth: true,
+        dateStr: `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      });
+    }
+
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    const remaining = 42 - cells.length;
+    for (let d = 1; d <= remaining; d++) {
+      cells.push({
+        day: d,
+        month: nextMonth,
+        year: nextYear,
+        isCurrentMonth: false,
+        dateStr: `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      });
+    }
+
+    return cells;
+  };
+
+  const handlePrevMonth = (type) => {
+    if (type === 'start') {
+      setStartCalView(prev => {
+        const nextMonth = prev.month === 0 ? 11 : prev.month - 1;
+        const nextYear = prev.month === 0 ? prev.year - 1 : prev.year;
+        return { year: nextYear, month: nextMonth };
+      });
+    } else {
+      setEndCalView(prev => {
+        const nextMonth = prev.month === 0 ? 11 : prev.month - 1;
+        const nextYear = prev.month === 0 ? prev.year - 1 : prev.year;
+        return { year: nextYear, month: nextMonth };
+      });
+    }
+  };
+
+  const handleNextMonth = (type) => {
+    if (type === 'start') {
+      setStartCalView(prev => {
+        const nextMonth = prev.month === 11 ? 0 : prev.month + 1;
+        const nextYear = prev.month === 11 ? prev.year + 1 : prev.year;
+        return { year: nextYear, month: nextMonth };
+      });
+    } else {
+      setEndCalView(prev => {
+        const nextMonth = prev.month === 11 ? 0 : prev.month + 1;
+        const nextYear = prev.month === 11 ? prev.year + 1 : prev.year;
+        return { year: nextYear, month: nextMonth };
+      });
+    }
+  };
+
+  const renderCustomCalendar = (type) => {
+    const isStart = type === 'start';
+    const currentView = isStart ? startCalView : endCalView;
+    const selectedDate = isStart ? filterStartDate : filterEndDate;
+    
+    const days = getCalendarDays(currentView.year, currentView.month);
+    const monthsName = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+
+    const minDateLimit = isStart 
+      ? (data?.summary?.minDate || '') 
+      : (filterStartDate || data?.summary?.minDate || '');
+    const maxDateLimit = isStart 
+      ? (filterEndDate || data?.summary?.maxDate || '') 
+      : (data?.summary?.maxDate || '');
+
+    const handleDayClick = (dateStr) => {
+      if (isStart) {
+        setFilterStartDate(dateStr);
+        setShowStartCalendar(false);
+      } else {
+        setFilterEndDate(dateStr);
+        setShowEndCalendar(false);
+      }
+    };
+
+    return (
+      <div 
+        className="glass-card" 
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute',
+          top: '100%',
+          [isStart ? 'left' : 'right']: 0,
+          marginTop: '0.6rem',
+          zIndex: 1000,
+          width: '280px',
+          padding: '1rem',
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-card)',
+          backdropFilter: 'blur(20px)',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.35)',
+          animation: 'calFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <button 
+            onClick={() => handlePrevMonth(type)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '6px',
+              fontSize: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+          >
+            &lt;
+          </button>
+          
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', gap: '0.25rem' }}>
+            <span>{currentView.year} 年</span>
+            <span>{monthsName[currentView.month]}</span>
+          </div>
+
+          <button 
+            onClick={() => handleNextMonth(type)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-primary)',
+              cursor: 'pointer',
+              padding: '0.25rem 0.5rem',
+              borderRadius: '6px',
+              fontSize: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+          >
+            &gt;
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.2rem', textAlign: 'center', marginBottom: '0.5rem' }}>
+          {['一', '二', '三', '四', '五', '六', '日'].map(w => (
+            <span key={w} style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>{w}</span>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.2rem' }}>
+          {days.map((cell, idx) => {
+            const isToday = cell.dateStr === getTodayStr();
+            const isSelected = cell.dateStr === selectedDate;
+            
+            const isBeforeMin = minDateLimit && cell.dateStr < minDateLimit;
+            const isAfterMax = maxDateLimit && cell.dateStr > maxDateLimit;
+            const isDisabled = isBeforeMin || isAfterMax;
+
+            const buttonStyle = {
+              background: isSelected 
+                ? 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)' 
+                : 'none',
+              border: isToday && !isSelected ? '1px solid var(--primary)' : 'none',
+              color: isSelected 
+                ? '#fff' 
+                : isDisabled 
+                  ? 'rgba(255,255,255,0.1)' 
+                  : cell.isCurrentMonth 
+                    ? 'var(--text-primary)' 
+                    : 'var(--text-muted)',
+              opacity: isDisabled ? 0.25 : cell.isCurrentMonth ? 1 : 0.5,
+              cursor: isDisabled ? 'not-allowed' : 'pointer',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.75rem',
+              fontWeight: isSelected || isToday ? 'bold' : 'normal',
+              padding: 0,
+              outline: 'none',
+              transition: 'all 0.15s ease',
+              boxShadow: isSelected ? '0 0 6px var(--primary)' : 'none'
+            };
+
+            return (
+              <button
+                key={idx}
+                disabled={isDisabled}
+                onClick={() => handleDayClick(cell.dateStr)}
+                style={buttonStyle}
+                onMouseEnter={(e) => {
+                  if (!isDisabled && !isSelected) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isDisabled && !isSelected) {
+                    e.currentTarget.style.background = 'none';
+                    e.currentTarget.style.color = cell.isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)';
+                  }
+                }}
+              >
+                {cell.day}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // 根據日期區間過濾後的基礎發票資料
+  const activeInvoicesFiltered = useMemo(() => {
+    if (!data || !data.invoices) return [];
+    return data.invoices.filter(inv => {
+      if (!filterStartDate && !filterEndDate) return true;
+      if (filterStartDate && inv.date < filterStartDate) return false;
+      if (filterEndDate && inv.date > filterEndDate) return false;
+      return true;
+    });
+  }, [data, filterStartDate, filterEndDate]);
+
+  const derivedData = useMemo(() => {
+    if (!data || !data.invoices) return null;
+
+    const invoicesFiltered = activeInvoicesFiltered;
+    const df_active = invoicesFiltered.filter(inv => inv.invStatus !== '已作廢');
+    const df_voided = invoicesFiltered.filter(inv => inv.invStatus === '已作廢');
+
+    // 1. Spend
+    const totalSpend = df_active.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvoices = df_active.length;
+    const averageInvoiceSpend = totalInvoices > 0 ? Math.round(totalSpend / totalInvoices) : 0;
+
+    // 2. Refunds
+    let totalRefundAmount = 0;
+    let totalRefundCount = 0;
+    df_active.forEach(inv => {
+      let hasRefundItem = false;
+      inv.items.forEach(item => {
+        if (item.amount < 0) {
+          totalRefundAmount += item.amount;
+          hasRefundItem = true;
+        }
+      });
+      if (hasRefundItem) {
+        totalRefundCount += 1;
+      }
+    });
+
+    // 3. Voided
+    const voidedCount = df_voided.length;
+    const voidedAmount = df_voided.reduce((sum, inv) => sum + inv.amount, 0);
+
+    const minDate = df_active.length > 0 
+      ? df_active.reduce((min, inv) => inv.date < min ? inv.date : min, df_active[0].date) 
+      : '';
+    const maxDate = df_active.length > 0 
+      ? df_active.reduce((max, inv) => inv.date > max ? inv.date : max, df_active[0].date) 
+      : '';
+
+    // 4. A. Month Trend
+    const monthGroups = {};
+    df_active.forEach(inv => {
+      const m = inv.month || inv.date.substring(0, 7);
+      if (!monthGroups[m]) {
+        monthGroups[m] = { month: m, amount: 0, countSet: new Set() };
+      }
+      monthGroups[m].amount += inv.amount;
+      monthGroups[m].countSet.add(inv.invNum);
+    });
+    const monthlyTrend = Object.values(monthGroups).map(g => ({
+      month: g.month,
+      amount: g.amount,
+      count: g.countSet.size
+    })).sort((a, b) => a.month.localeCompare(b.month));
+
+    // B. Week Trend
+    const weekGroups = {};
+    df_active.forEach(inv => {
+      const y = inv.year || new Date(inv.date).getFullYear();
+      const w = inv.week_num || getISOWeekNumber(inv.date);
+      const key = `${y}-W${w}`;
+      if (!weekGroups[key]) {
+        weekGroups[key] = { year: y, week_num: w, amount: 0, countSet: new Set() };
+      }
+      weekGroups[key].amount += inv.amount;
+      weekGroups[key].countSet.add(inv.invNum);
+    });
+    const weeklyTrend = Object.values(weekGroups).map(g => ({
+      week_label: `第 ${g.week_num} 週`,
+      amount: g.amount,
+      count: g.countSet.size,
+      sortKey: `${g.year}-${String(g.week_num).padStart(2, '0')}`
+    })).sort((a, b) => a.sortKey.localeCompare(b.sortKey)).slice(-12);
+
+    // C. Categories (exclude negative values)
+    const categoryGroups = {};
+    df_active.forEach(inv => {
+      inv.items.forEach(item => {
+        if (item.amount > 0) {
+          const cat = item.category || '其它';
+          if (!categoryGroups[cat]) {
+            categoryGroups[cat] = { category: cat, amount: 0, countSet: new Set() };
+          }
+          categoryGroups[cat].amount += item.amount;
+          categoryGroups[cat].countSet.add(inv.invNum);
+        }
+      });
+    });
+    const categorySum = Object.values(categoryGroups).reduce((sum, g) => sum + g.amount, 0);
+    const categoriesList = Object.values(categoryGroups).map(g => ({
+      category: g.category,
+      amount: g.amount,
+      count: g.countSet.size,
+      percentage: categorySum > 0 ? parseFloat((g.amount / categorySum * 100).toFixed(1)) : 0
+    })).sort((a, b) => b.amount - a.amount);
+
+    // D. Top Sellers
+    const sellerGroups = {};
+    df_active.forEach(inv => {
+      if (inv.amount > 0) {
+        const s = inv.sellerName;
+        if (!sellerGroups[s]) {
+          sellerGroups[s] = { sellerName: s, amount: 0, countSet: new Set() };
+        }
+        sellerGroups[s].amount += inv.amount;
+        sellerGroups[s].countSet.add(inv.invNum);
+      }
+    });
+    const topSellers = Object.values(sellerGroups).map(g => ({
+      sellerName: g.sellerName,
+      amount: g.amount,
+      count: g.countSet.size
+    })).sort((a, b) => b.amount - a.amount).slice(0, 10);
+
+    return {
+      summary: {
+        totalSpend,
+        totalInvoices,
+        averageInvoiceSpend,
+        totalRefundAmount,
+        totalRefundCount,
+        voidedCount,
+        voidedAmount,
+        minDate,
+        maxDate,
+        lastUpdated: data.summary?.lastUpdated || ''
+      },
+      trends: {
+        monthly: monthlyTrend,
+        weekly: weeklyTrend
+      },
+      categories: categoriesList,
+      topSellers,
+      invoices: invoicesFiltered
+    };
+  }, [data, activeInvoicesFiltered]);
+
+  // 解構 derivedData，若為空則使用安全預設值，避免 data 為空時崩潰
+  const { summary, trends, categories, topSellers, invoices } = derivedData || {
+    summary: {},
+    trends: { monthly: [], weekly: [] },
+    categories: [],
+    topSellers: [],
+    invoices: []
+  };
+
+  const handleSellerClick = (sellerName) => {
+    setSelectedSeller(sellerName);
+    setShowSellerModal(true);
+    setExpandedSellerInvoices({});
   };
   
   // 獲取過去幾個月前的年月日字串 (格式 YYYY-MM-DD)
@@ -214,15 +678,15 @@ function App() {
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(15, 23, 42, 0.85)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 9999,
+      background: 'rgba(0, 0, 0, 0.5)',
+      backdropFilter: 'blur(12px)',
+      zIndex: 99999,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2rem',
-      color: '#fff'
+      color: 'var(--text-primary)'
     }}>
       <div className="glass-card" style={{
         maxWidth: '500px',
@@ -233,25 +697,26 @@ function App() {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '1.5rem',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-        border: '1px solid rgba(255,255,255,0.1)'
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+        border: '1px solid var(--border-color)',
+        background: 'var(--bg-card)'
       }}>
         <div className="kpi-icon-container blue" style={{ width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <RefreshCw size={32} className="spin" />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>機器人正在自動同步發票...</h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>查詢起迄：{startDate} ~ {endDate}</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>機器人正在自動同步發票...</h2>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>查詢起跨：{startDate} ~ {endDate}</p>
         </div>
         
         <div style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.05)',
+          background: 'var(--bg-item)',
+          border: '1px solid var(--border-item)',
           borderRadius: '0.75rem',
           padding: '1rem',
           textAlign: 'left',
           fontSize: '0.85rem',
-          color: '#d1d5db',
+          color: 'var(--text-secondary)',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.5rem',
@@ -267,7 +732,7 @@ function App() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>3.</span>
-            <span style={{ color: '#fca5a5', fontWeight: 600 }}>請在開啟的瀏覽器視窗中，手動輸入「圖形驗證碼」並點擊「登入」！</span>
+            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>請在開啟的瀏覽器視窗中，手動輸入「圖形驗證碼」並點擊「登入」！</span>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>4.</span>
@@ -406,7 +871,6 @@ function App() {
     );
   }
 
-  const { summary, trends, categories, topSellers, heatmap, invoices } = data;
 
   // ----------------------------------------------------
   // 發票搜尋、過濾與排序邏輯
@@ -481,30 +945,203 @@ function App() {
   return (
     <div className="dashboard-wrapper">
       
+      <style>{`
+        @keyframes calFadeIn {
+          from { opacity: 0; transform: translateY(-8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* 標題與更新區塊 */}
-      <div className="dashboard-title-area">
+      <div className="dashboard-title-area" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
         <div>
           <h1 className="dashboard-title">
             <Wallet size={36} style={{ color: 'var(--primary)' }} />
             財政部電子發票大數據儀表板
           </h1>
           <p className="dashboard-subtitle">
-            基於 Python Pandas 清洗核心 • 本地發票庫區間：{summary.minDate ? `${summary.minDate.replace(/-/g, '/')} ~ ${summary.maxDate.replace(/-/g, '/')}` : '無資料'}
+            本地發票庫區間：{data?.summary?.minDate ? `${data.summary.minDate.replace(/-/g, '/')} ~ ${data.summary.maxDate.replace(/-/g, '/')}` : '無資料'}
+            {data?.summary && (filterStartDate !== data.summary.minDate || filterEndDate !== data.summary.maxDate) && (
+              <span style={{ marginLeft: '0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+                （已篩選分析區間：{filterStartDate.replace(/-/g, '/')} ~ {filterEndDate.replace(/-/g, '/')}）
+              </span>
+            )}
           </p>
+          
+          {/* 自訂 100% 點擊式時間區段篩選器 (置於左側，完美貼合副標題之下) */}
+          <div style={{ marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>篩選分析區間：</span>
+            
+            <div className="custom-calendar-container" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', position: 'relative' }}>
+              {/* 起日選取 */}
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowStartCalendar(!showStartCalendar);
+                    setShowEndCalendar(false);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '32px',
+                    boxSizing: 'border-box',
+                    gap: '0.4rem',
+                    padding: '0 0.8rem',
+                    borderRadius: '20px',
+                    border: showStartCalendar ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: showStartCalendar ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    boxShadow: showStartCalendar ? '0 0 10px rgba(99, 102, 241, 0.2)' : 'none',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showStartCalendar) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.border = '1px solid rgba(99, 102, 241, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 0 8px rgba(99, 102, 241, 0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showStartCalendar) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                      e.currentTarget.style.border = '1px solid var(--border-color)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <CalendarRange size={13} style={{ color: 'var(--primary)' }} />
+                  <span>{filterStartDate ? filterStartDate.replace(/-/g, '/') : '選擇起日'}</span>
+                </button>
+                {showStartCalendar && renderCustomCalendar('start')}
+              </div>
+
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>至</span>
+
+              {/* 迄日選取 */}
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEndCalendar(!showEndCalendar);
+                    setShowStartCalendar(false);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '32px',
+                    boxSizing: 'border-box',
+                    gap: '0.4rem',
+                    padding: '0 0.8rem',
+                    borderRadius: '20px',
+                    border: showEndCalendar ? '1px solid var(--primary)' : '1px solid var(--border-color)',
+                    background: showEndCalendar ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.8rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    boxShadow: showEndCalendar ? '0 0 10px rgba(99, 102, 241, 0.2)' : 'none',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showEndCalendar) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                      e.currentTarget.style.border = '1px solid rgba(99, 102, 241, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 0 8px rgba(99, 102, 241, 0.15)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!showEndCalendar) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                      e.currentTarget.style.border = '1px solid var(--border-color)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }
+                  }}
+                >
+                  <CalendarRange size={13} style={{ color: 'var(--primary)' }} />
+                  <span>{filterEndDate ? filterEndDate.replace(/-/g, '/') : '選擇迄日'}</span>
+                </button>
+                {showEndCalendar && renderCustomCalendar('end')}
+              </div>
+
+              {/* 重置按鈕 */}
+              <button 
+                onClick={() => {
+                  if (data?.summary) {
+                    setFilterStartDate(data.summary.minDate || '');
+                    setFilterEndDate(data.summary.maxDate || '');
+                    if (data.summary.minDate) {
+                      const [y, m] = data.summary.minDate.split('-').map(Number);
+                      setStartCalView({ year: y, month: m - 1 });
+                    }
+                    if (data.summary.maxDate) {
+                      const [y, m] = data.summary.maxDate.split('-').map(Number);
+                      setEndCalView({ year: y, month: m - 1 });
+                    }
+                  }
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '32px',
+                  boxSizing: 'border-box',
+                  padding: '0 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  border: '1px solid var(--border-color)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  outline: 'none'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.border = '1px solid var(--primary)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(99, 102, 241, 0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.border = '1px solid var(--border-color)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                重置
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* 風格切換器 */}
+        
+        {/* 右側：風格切換與同步控制 (運用絕對定位將風格置於同步上方，並將同步卡片對齊標題頂部) */}
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '1.25rem' }}>
+          
+          {/* 風格切換器 (極簡版：置於同步控制上方) */}
           <div className="glass-card theme-panel" style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '0.75rem', 
-            padding: '0.6rem 1rem', 
-            borderRadius: '12px',
+            gap: '0.6rem', 
+            padding: '0.4rem 0.8rem', 
+            borderRadius: '10px',
             border: '1px solid var(--border-color)',
-            background: 'rgba(255,255,255,0.02)'
+            background: 'rgba(255,255,255,0.02)',
+            position: 'absolute',
+            bottom: '100%',
+            right: 0,
+            marginBottom: '0.6rem',
+            whiteSpace: 'nowrap'
           }}>
-            <Palette size={16} style={{ color: 'var(--primary)' }} />
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>風格：</span>
+            <Palette size={14} style={{ color: 'var(--primary)' }} />
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {themes.map((t) => (
                 <button
@@ -512,8 +1149,8 @@ function App() {
                   onClick={() => setActiveTheme(t.id)}
                   title={t.name}
                   style={{
-                    width: '18px',
-                    height: '18px',
+                    width: '16px',
+                    height: '16px',
                     borderRadius: '50%',
                     background: t.color,
                     border: activeTheme === t.id ? '2px solid #fff' : '2px solid transparent',
@@ -531,7 +1168,7 @@ function App() {
             </span>
           </div>
 
-          {/* 新增：發票同步爬蟲控制台 */}
+          {/* 發票同步爬蟲控制台 */}
           <div className="glass-card crawler-panel" style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -539,43 +1176,44 @@ function App() {
             padding: '0.6rem 1.2rem', 
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
-            background: 'rgba(255,255,255,0.02)'
+            background: 'rgba(255,255,255,0.02)',
+            margin: 0
           }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>本地最近一筆日期</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Calendar size={14} style={{ color: 'var(--primary)' }} />
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
-                {summary.maxDate ? summary.maxDate.replace(/-/g, '/') : '無資料'}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>本地最近一筆日期</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={14} style={{ color: 'var(--primary)' }} />
+                <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
+                  {data?.summary?.maxDate ? data.summary.maxDate.replace(/-/g, '/') : '無資料'}
+                </span>
+              </div>
             </div>
+            
+            <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+            
+            <button 
+              onClick={handleRunCrawler}
+              disabled={crawlerLoading}
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.6rem 1.2rem',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: crawlerLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
+              {crawlerLoading ? '正在同步...' : '同步雲端發票'}
+            </button>
           </div>
-          
-          <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
-          
-          <button 
-            onClick={handleRunCrawler}
-            disabled={crawlerLoading}
-            style={{
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-              border: 'none',
-              color: '#fff',
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: crawlerLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
-            {crawlerLoading ? '正在同步...' : '同步雲端發票'}
-          </button>
-        </div>
         </div>
       </div>
 
@@ -683,7 +1321,7 @@ function App() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={trendMode === 'monthly' ? trends.monthly : trends.weekly}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                margin={{ top: 10, right: 10, left: 15, bottom: 0 }}
               >
                 <defs>
                   <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -707,6 +1345,7 @@ function App() {
                   stroke="var(--text-secondary)"
                   fontSize={11}
                   tickLine={false}
+                  width={65}
                   tickFormatter={(val) => `NT$${val}`}
                 />
                 <YAxis 
@@ -715,14 +1354,15 @@ function App() {
                   stroke="var(--text-muted)"
                   fontSize={11}
                   tickLine={false}
+                  width={40}
                   tickFormatter={(val) => `${val}張`}
                 />
                 <ChartTooltip 
                   contentStyle={{ 
-                    background: '#0f172a', 
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'var(--bg-secondary)', 
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
-                    color: 'white',
+                    color: 'var(--text-primary)',
                     fontSize: '12px'
                   }}
                   formatter={(value, name) => {
@@ -790,10 +1430,10 @@ function App() {
                   </Pie>
                   <ChartTooltip 
                     contentStyle={{ 
-                      background: '#0f172a', 
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: 'var(--bg-secondary)', 
+                      border: '1px solid var(--border-color)',
                       borderRadius: '8px',
-                      color: 'white',
+                      color: 'var(--text-primary)',
                       fontSize: '12px'
                     }}
                     formatter={(value) => [formatCurrency(value), "總花費"]}
@@ -854,71 +1494,113 @@ function App() {
               消費最高店家排行 Top 10
             </h3>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', flex: 1, alignItems: 'center' }}>
-            {/* 左側長條圖 */}
-            <div style={{ width: '100%', height: '260px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={topSellers}
-                  layout="vertical"
-                  margin={{ top: 0, right: 10, left: 10, bottom: 0 }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, padding: '0.1rem 0' }}>
+            {topSellers.map((seller, idx) => {
+              const maxAmount = topSellers[0]?.amount || 1;
+              const percentage = (seller.amount / maxAmount) * 100;
+              return (
+                <div 
+                  key={idx} 
+                  className="seller-rank-row"
+                  onClick={() => handleSellerClick(seller.sellerName)}
+                  style={{ 
+                    cursor: 'pointer', 
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0.32rem 0.6rem',
+                    background: 'rgba(255, 255, 255, 0.005)',
+                    border: '1px solid rgba(255, 255, 255, 0.015)',
+                    borderRadius: '8px',
+                    marginBottom: '0.05rem',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                    e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--primary) 35%, transparent)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateX(0)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.015)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.005)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
-                  <XAxis type="number" stroke="var(--text-muted)" fontSize={9} tickLine={false} />
-                  <YAxis 
-                    dataKey="sellerShort" 
-                    type="category" 
-                    stroke="var(--text-secondary)" 
-                    fontSize={9} 
-                    tickLine={false} 
-                    width={90} 
-                    tickFormatter={(val) => val.length > 7 ? val.substring(0, 6) + '...' : val}
-                  />
-                  <ChartTooltip 
-                    contentStyle={{ 
-                      background: '#0f172a', 
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
-                      color: 'white',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value) => [formatCurrency(value), "消費額"]}
-                  />
-                  <Bar dataKey="amount" fill="url(#sellerBarGrad)" radius={[0, 4, 4, 0]}>
-                    {topSellers.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`url(#sellerBarGrad-${index % 2 === 0 ? '1' : '2'})`} />
-                    ))}
-                  </Bar>
-                  <defs>
-                    <linearGradient id="sellerBarGrad-1" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#4f46e5" />
-                    </linearGradient>
-                    <linearGradient id="sellerBarGrad-2" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#a855f7" />
-                      <stop offset="100%" stopColor="#7c3aed" />
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            {/* 右側排行卡片清單 */}
-            <div className="top-sellers-list">
-              {topSellers.slice(0, 5).map((seller, idx) => (
-                <div key={idx} className="seller-rank-row">
-                  <div className="seller-rank-left">
-                    <div className={`seller-rank-badge rank-${idx + 1}`}>
+                  {/* 1. 名次與店家名稱區塊 (固定寬度 140px，超過 8 字自動換行) */}
+                  <div style={{ display: 'flex', alignItems: 'center', width: '140px', flexShrink: 0, gap: '0.45rem', zIndex: 2 }}>
+                    <div 
+                      className={`seller-rank-badge rank-${idx + 1}`} 
+                      style={{ 
+                        width: '18px', 
+                        height: '18px', 
+                        borderRadius: '5px', 
+                        fontSize: '0.65rem', 
+                        fontWeight: 700, 
+                        flexShrink: 0 
+                      }}
+                    >
                       {idx + 1}
                     </div>
-                    <span className="seller-rank-name">{seller.sellerShort}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span 
+                        className="seller-rank-name" 
+                        style={{ 
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-all',
+                          lineHeight: 1.15,
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          color: 'var(--text-primary)',
+                          maxWidth: '110px'
+                        }}
+                        title={seller.sellerName}
+                      >
+                        {seller.sellerName}
+                      </span>
+                    </div>
                   </div>
-                  <div className="seller-rank-right">
-                    <span className="seller-rank-amount">{formatCurrency(seller.amount)}</span>
-                    <span className="seller-rank-count">{seller.count} 次交易</span>
+
+                  {/* 2. 金額與交易次數區塊 (固定寬度 95px，置中緊接在後) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '95px', flexShrink: 0, paddingLeft: '0.25rem', zIndex: 2 }}>
+                    <span className="seller-rank-amount" style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
+                      {formatCurrency(seller.amount)}
+                    </span>
+                    <span className="seller-rank-count" style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.02rem' }}>
+                      {seller.count}次交易
+                    </span>
+                  </div>
+
+                  {/* 3. 右側長條圖對比區塊 (Flex: 1，所有店家基準線完美對齊，精準展現差距比例) */}
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '0.75rem', zIndex: 2 }}>
+                    <div style={{ 
+                      width: '100%', 
+                      height: '14px', 
+                      backgroundColor: 'rgba(255, 255, 255, 0.02)', 
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255, 255, 255, 0.03)',
+                      boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.2)'
+                    }}>
+                      <div style={{ 
+                        width: `${percentage}%`, 
+                        height: '100%', 
+                        background: idx % 2 === 0 ? 'var(--gradient-main)' : 'linear-gradient(90deg, var(--secondary) 0%, var(--accent) 100%)', 
+                        borderRadius: '3px',
+                        boxShadow: '0 0 5px var(--primary-glow)',
+                        transition: 'width 1s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }} />
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
 
@@ -959,7 +1641,7 @@ function App() {
                       style={{ 
                         fontWeight: cat === '合計' ? 700 : 500,
                         color: cat === '合計' ? 'var(--primary)' : 'var(--text-secondary)',
-                        background: cat === '合計' ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                        background: cat === '合計' ? 'color-mix(in srgb, var(--primary) 8%, transparent)' : 'transparent',
                         borderRadius: '4px',
                         padding: '0.25rem 0.5rem',
                         fontSize: '0.78rem'
@@ -984,12 +1666,16 @@ function App() {
                           className="heatmap-block"
                           style={{
                             backgroundColor: hasData 
-                              ? (isTotal ? `rgba(168, 85, 247, ${opacity})` : `rgba(99, 102, 241, ${opacity})`) 
-                              : 'rgba(255, 255, 255, 0.02)',
-                            color: hasData ? '#fff' : 'rgba(255, 255, 255, 0.15)',
+                              ? (isTotal 
+                                  ? `color-mix(in srgb, var(--secondary) ${opacity * 100}%, transparent)` 
+                                  : `color-mix(in srgb, var(--primary) ${opacity * 100}%, transparent)`) 
+                              : 'color-mix(in srgb, var(--text-muted) 5%, transparent)',
+                            color: hasData ? 'var(--text-primary)' : 'var(--text-muted)',
                             border: hasData 
-                              ? (isTotal ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid rgba(99, 102, 241, 0.3)') 
-                              : '1px solid rgba(255, 255, 255, 0.03)',
+                              ? (isTotal 
+                                  ? '1px solid var(--secondary)' 
+                                  : '1px solid var(--primary)') 
+                              : '1px solid var(--border-color)',
                             fontWeight: isTotal ? 700 : 500
                           }}
                         >
@@ -1189,9 +1875,9 @@ function App() {
                                     borderRadius: '4px',
                                     fontSize: '0.65rem',
                                     fontWeight: 600,
-                                    backgroundColor: `${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}15`,
+                                    backgroundColor: `color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 15%, transparent)`,
                                     color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它'],
-                                    border: `1px solid ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}25`
+                                    border: `1px solid color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 25%, transparent)`
                                   }}>
                                     {item.category}
                                   </span>
@@ -1218,7 +1904,7 @@ function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(15, 23, 42, 0.8)',
+          background: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(12px)',
           zIndex: 99999,
           display: 'flex',
@@ -1235,13 +1921,13 @@ function App() {
             display: 'flex',
             flexDirection: 'column',
             gap: '1.5rem',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'rgba(30, 41, 59, 0.7)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-card)',
             overflow: 'hidden'
           }}>
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div className="kpi-icon-container crimson" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
                   <AlertTriangle size={20} />
@@ -1256,9 +1942,9 @@ function App() {
               <button 
                 onClick={() => setShowRefundModal(false)}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
+                  background: 'var(--border-color)',
                   border: 'none',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
@@ -1271,7 +1957,7 @@ function App() {
                   transition: 'all 0.2s'
                 }}
                 onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
-                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.05)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--border-color)'}
               >
                 ✕
               </button>
@@ -1297,13 +1983,13 @@ function App() {
                         style={{ 
                           cursor: 'pointer',
                           borderLeft: '4px solid var(--danger)',
-                          background: 'rgba(255, 255, 255, 0.02)',
+                          background: 'var(--bg-item)',
                           width: '100%',
                           display: 'flex',
                           justifyContent: 'space-between',
                           padding: '1rem',
                           borderRadius: '8px',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--border-item)',
                           alignItems: 'center'
                         }}
                       >
@@ -1350,7 +2036,7 @@ function App() {
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
                               <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}>
+                                <tr style={{ borderBottom: '1px solid var(--border-table-header)', color: 'var(--text-muted)' }}>
                                   <th style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>退貨品項</th>
                                   <th style={{ padding: '0.5rem', textAlign: 'center' }}>數量</th>
                                   <th style={{ padding: '0.5rem', textAlign: 'right' }}>單價</th>
@@ -1360,7 +2046,7 @@ function App() {
                               </thead>
                               <tbody>
                                 {inv.items.filter(item => item.amount < 0).map((item, itemIdx) => (
-                                  <tr key={itemIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                  <tr key={itemIdx} style={{ borderBottom: '1px solid var(--border-table)' }}>
                                     <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
                                       {item.itemName}
                                     </td>
@@ -1379,9 +2065,9 @@ function App() {
                                         borderRadius: '4px',
                                         fontSize: '0.65rem',
                                         fontWeight: 600,
-                                        backgroundColor: `${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}15`,
+                                        backgroundColor: `color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 15%, transparent)`,
                                         color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它'],
-                                        border: `1px solid ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']}25`
+                                        border: `1px solid color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 25%, transparent)`
                                       }}>
                                         {item.category}
                                       </span>
@@ -1400,7 +2086,7 @@ function App() {
             </div>
 
             {/* Modal Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
               <button 
                 onClick={() => setShowRefundModal(false)}
                 className="chart-btn active"
@@ -1421,7 +2107,7 @@ function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(15, 23, 42, 0.8)',
+          background: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(12px)',
           zIndex: 99999,
           display: 'flex',
@@ -1438,13 +2124,13 @@ function App() {
             display: 'flex',
             flexDirection: 'column',
             gap: '1.5rem',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            background: 'rgba(30, 41, 59, 0.7)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-card)',
             overflow: 'hidden'
           }} onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <div 
                   className="kpi-icon-container" 
@@ -1455,7 +2141,7 @@ function App() {
                     alignItems: 'center', 
                     justifyContent: 'center', 
                     borderRadius: '10px',
-                    backgroundColor: `${CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']}20`,
+                    backgroundColor: `color-mix(in srgb, ${CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']} 20%, transparent)`,
                     color: CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']
                   }}
                 >
@@ -1473,9 +2159,9 @@ function App() {
               <button 
                 onClick={() => setShowCategoryModal(false)}
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
+                  background: 'var(--border-color)',
                   border: 'none',
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
@@ -1487,8 +2173,8 @@ function App() {
                   fontWeight: 'bold',
                   transition: 'all 0.2s'
                 }}
-                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
-                onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.05)'}
+                onMouseEnter={(e) => e.target.style.background = 'color-mix(in srgb, var(--primary) 20%, transparent)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--border-color)'}
               >
                 ✕
               </button>
@@ -1518,13 +2204,13 @@ function App() {
                         style={{ 
                           cursor: 'pointer',
                           borderLeft: `4px solid ${CATEGORY_COLORS[selectedCategory] || CATEGORY_COLORS['其它']}`,
-                          background: 'rgba(255, 255, 255, 0.02)',
+                          background: 'var(--bg-item)',
                           width: '100%',
                           display: 'flex',
                           justifyContent: 'space-between',
                           padding: '1rem',
                           borderRadius: '8px',
-                          border: '1px solid rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--border-item)',
                           alignItems: 'center'
                         }}
                       >
@@ -1556,8 +2242,8 @@ function App() {
                       {/* Expandable items table */}
                       {isExpanded && (
                         <div style={{ 
-                          background: 'rgba(255, 255, 255, 0.01)',
-                          border: '1px solid rgba(255, 255, 255, 0.03)',
+                          background: 'var(--bg-table)',
+                          border: '1px solid var(--border-table)',
                           borderRadius: '12px',
                           padding: '1rem',
                           marginLeft: '0.25rem',
@@ -1567,7 +2253,7 @@ function App() {
                           <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
                               <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}>
+                                <tr style={{ borderBottom: '1px solid var(--border-table-header)', color: 'var(--text-muted)' }}>
                                   <th style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>商品品項</th>
                                   <th style={{ padding: '0.5rem', textAlign: 'center' }}>數量</th>
                                   <th style={{ padding: '0.5rem', textAlign: 'right' }}>單價</th>
@@ -1576,7 +2262,7 @@ function App() {
                               </thead>
                               <tbody>
                                 {inv.items.filter(item => item.category === selectedCategory).map((item, itemIdx) => (
-                                  <tr key={itemIdx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                                  <tr key={itemIdx} style={{ borderBottom: '1px solid var(--border-table)' }}>
                                     <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
                                       {item.itemName}
                                     </td>
@@ -1603,9 +2289,221 @@ function App() {
             </div>
 
             {/* Modal Footer */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
               <button 
                 onClick={() => setShowCategoryModal(false)}
+                className="chart-btn active"
+                style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
+              >
+                關閉視窗
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 店家消費明細彈出視窗 (Seller Details Modal) */}
+      {showSellerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(12px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1.5rem',
+          animation: 'fadeIn 0.25s ease'
+        }} onClick={() => setShowSellerModal(false)}>
+          <div className="glass-card" style={{
+            maxWidth: '850px',
+            width: '100%',
+            maxHeight: '85vh',
+            padding: '2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.5rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-card)',
+            overflow: 'hidden'
+          }} onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div 
+                  className="kpi-icon-container" 
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    color: 'var(--primary)'
+                  }}
+                >
+                  <Building size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    【{selectedSeller}】店內消費品項明細
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    本地發票庫累計消費：{formatCurrency(topSellers.find(s => s.sellerName === selectedSeller)?.amount || 0)}，共 {invoices.filter(inv => inv.sellerName === selectedSeller).length} 筆交易
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSellerModal(false)}
+                style={{
+                  background: 'var(--border-color)',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'color-mix(in srgb, var(--primary) 20%, transparent)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--border-color)'}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content - Invoices Scroll Area */}
+            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {invoices.filter(inv => inv.sellerName === selectedSeller).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                  <HelpCircle size={48} style={{ opacity: 0.3, marginBottom: '0.5rem' }} />
+                  <p>目前此店家下查無消費記錄</p>
+                </div>
+              ) : (
+                invoices.filter(inv => inv.sellerName === selectedSeller).map((inv) => {
+                  const isExpanded = expandedSellerInvoices[inv.invNum] || false;
+                  
+                  return (
+                    <div key={inv.invNum} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div 
+                        className="invoice-item-row"
+                        onClick={() => setExpandedSellerInvoices(prev => ({ ...prev, [inv.invNum]: !prev[inv.invNum] }))}
+                        style={{ 
+                          cursor: 'pointer',
+                          borderLeft: '4px solid var(--primary)',
+                          background: 'var(--bg-item)',
+                          width: '100%',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '1rem',
+                          borderRadius: '8px',
+                          border: '1px solid var(--border-item)',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <div className="invoice-left" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div className="invoice-icon" style={{ color: 'var(--primary)' }}>
+                            <Receipt size={18} />
+                          </div>
+                          <div className="invoice-main-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span className="invoice-seller" style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.9rem' }}>{inv.sellerName}</span>
+                            <div className="invoice-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{inv.invNum}</span>
+                              <span>•</span>
+                              <span>{inv.date} {inv.invTime} ({inv.weekday})</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="invoice-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                          <span className="invoice-amount-display normal" style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '1.1rem' }}>
+                            {formatCurrency(inv.amount)}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <span>共 {inv.items.length} 項商品</span>
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expandable items table */}
+                      {isExpanded && (
+                        <div style={{ 
+                          background: 'var(--bg-table)',
+                          border: '1px solid var(--border-table)',
+                          borderRadius: '12px',
+                          padding: '1rem',
+                          marginLeft: '0.25rem',
+                          marginBottom: '0.5rem',
+                          animation: 'fadeIn 0.2s ease'
+                        }}>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', textAlign: 'left' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border-table-header)', color: 'var(--text-muted)' }}>
+                                  <th style={{ padding: '0.5rem 0.5rem 0.5rem 0' }}>商品品項</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'center' }}>數量</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>單價</th>
+                                  <th style={{ padding: '0.5rem', textAlign: 'right' }}>金額</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {inv.items.map((item, itemIdx) => (
+                                  <tr key={itemIdx} style={{ borderBottom: '1px solid var(--border-table)' }}>
+                                    <td style={{ padding: '0.65rem 0.5rem 0.65rem 0', fontWeight: 500, color: 'var(--text-primary)' }}>
+                                      {item.itemName}
+                                      <span 
+                                        style={{ 
+                                          marginLeft: '0.5rem', 
+                                          padding: '0.1rem 0.35rem', 
+                                          borderRadius: '4px', 
+                                          fontSize: '0.62rem', 
+                                          fontWeight: 600,
+                                          background: `color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 15%, transparent)`,
+                                          color: CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它'],
+                                          border: `1px solid color-mix(in srgb, ${CATEGORY_COLORS[item.category] || CATEGORY_COLORS['其它']} 25%, transparent)`
+                                        }}
+                                      >
+                                        {item.category}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                      {item.qty}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                                      {formatCurrency(item.price)}
+                                    </td>
+                                    <td style={{ padding: '0.65rem', textAlign: 'right', fontWeight: 600, color: item.amount < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                                      {formatCurrency(item.amount)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+              <button 
+                onClick={() => setShowSellerModal(false)}
                 className="chart-btn active"
                 style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
               >

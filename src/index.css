@@ -27,6 +27,14 @@
   --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
   --gradient-glow: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
 
+  /* Sub-card & List Item Styling Variables */
+  --bg-item: rgba(255, 255, 255, 0.02);
+  --bg-item-hover: rgba(255, 255, 255, 0.04);
+  --border-item: rgba(255, 255, 255, 0.05);
+  --bg-table: rgba(255, 255, 255, 0.01);
+  --border-table: rgba(255, 255, 255, 0.03);
+  --border-table-header: rgba(255, 255, 255, 0.06);
+
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   font-weight: 400;
@@ -46,6 +54,7 @@ body {
   padding: 0;
   min-height: 100vh;
   background-color: var(--bg-primary);
+  color: var(--text-primary);
   background-image: 
     radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
@@ -318,7 +327,7 @@ h1, h2, h3, h4 {
   width: 80px;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(to right, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.9));
+  background: linear-gradient(to right, color-mix(in srgb, var(--primary) 10%, transparent), var(--primary));
 }
 
 .heatmap-grid-scroll {
@@ -328,9 +337,10 @@ h1, h2, h3, h4 {
 
 .heatmap-grid {
   display: grid;
-  grid-template-columns: 90px repeat(7, 1fr);
-  gap: 0.5rem;
-  min-width: 600px;
+  grid-template-columns: 85px repeat(7, 1fr);
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .heatmap-header-cell {
@@ -373,8 +383,8 @@ h1, h2, h3, h4 {
 
 .heatmap-tooltip {
   visibility: hidden;
-  background: #0f172a;
-  color: #fff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   text-align: center;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
@@ -385,8 +395,8 @@ h1, h2, h3, h4 {
   transform: translateX(-50%);
   width: 120px;
   font-size: 0.7rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
@@ -495,14 +505,14 @@ h1, h2, h3, h4 {
   align-items: center;
   padding: 1rem 1.25rem;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--bg-item);
+  border: 1px solid var(--border-item);
   transition: all 0.2s ease;
 }
 
 .invoice-item-row:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(99, 102, 241, 0.15);
+  background: var(--bg-item-hover);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
   transform: translateX(2px);
 }
 
@@ -689,7 +699,7 @@ h1, h2, h3, h4 {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
   font-size: 0.95rem;
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 
 .seller-rank-count {
@@ -745,9 +755,9 @@ h1, h2, h3, h4 {
 :root {
   --cat-food: #6366f1;
   --cat-trans: #38bdf8;
-  --cat-ent: #ec4899;
+  --cat-ent: #f43f5e;
   --cat-electronics: #f59e0b;
-  --cat-cloth: #a855f7;
+  --cat-cloth: #7c3aed;
   --cat-med: #10b981;
   --cat-other: #64748b;
 }
@@ -781,12 +791,19 @@ body.theme-cyberpunk {
   /* Category colors optimized for Cyberpunk */
   --cat-food: #00f0ff;
   --cat-trans: #38bdf8;
-  --cat-ent: #ff007f;
+  --cat-ent: #ff0055;
   --cat-electronics: #fffb00;
-  --cat-cloth: #bd00ff;
+  --cat-cloth: #9d00ff;
   --cat-med: #00ffcc;
   --cat-other: #71717a;
   
+  --bg-item: rgba(0, 240, 255, 0.02);
+  --bg-item-hover: rgba(0, 240, 255, 0.04);
+  --border-item: rgba(0, 240, 255, 0.08);
+  --bg-table: rgba(0, 240, 255, 0.015);
+  --border-table: rgba(0, 240, 255, 0.04);
+  --border-table-header: rgba(0, 240, 255, 0.08);
+
   color-scheme: dark;
 }
 
@@ -829,10 +846,17 @@ body.theme-emerald-light {
   --cat-trans: #0284c7;
   --cat-ent: #be123c;
   --cat-electronics: #6d28d9;
-  --cat-cloth: #b91c1c;
-  --cat-med: #047857;
+  --cat-cloth: #c2410c;
+  --cat-med: #ec4899;        /* Vibrant Rose Pink (Extremely distinct from forest teal green!) */
   --cat-other: #64748b;
   
+  --bg-item: rgba(15, 118, 110, 0.03);
+  --bg-item-hover: rgba(15, 118, 110, 0.06);
+  --border-item: rgba(15, 118, 110, 0.08);
+  --bg-table: rgba(15, 118, 110, 0.015);
+  --border-table: rgba(15, 118, 110, 0.05);
+  --border-table-header: rgba(15, 118, 110, 0.1);
+
   color-scheme: light;
 }
 
@@ -896,10 +920,17 @@ body.theme-sunset-aurora {
   --cat-trans: #f59e0b;
   --cat-ent: #fb7185;
   --cat-electronics: #fbbf24;
-  --cat-cloth: #c084fc;
+  --cat-cloth: #a855f7;
   --cat-med: #2dd4bf;
   --cat-other: #f43f5e99;
   
+  --bg-item: rgba(244, 63, 94, 0.02);
+  --bg-item-hover: rgba(244, 63, 94, 0.04);
+  --border-item: rgba(244, 63, 94, 0.06);
+  --bg-table: rgba(244, 63, 94, 0.015);
+  --border-table: rgba(244, 63, 94, 0.04);
+  --border-table-header: rgba(244, 63, 94, 0.08);
+
   color-scheme: dark;
 }
 

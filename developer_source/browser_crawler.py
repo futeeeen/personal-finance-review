@@ -14,7 +14,10 @@ def get_user_data_path(*paths):
         base_dir = os.path.dirname(sys.executable)
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
+        if os.path.basename(base_dir) == "developer_source":
+            base_dir = os.path.dirname(base_dir)
     return os.path.join(base_dir, "user_data", *paths)
+
 
 def update_crawler_status(status, message, step=None, error=None):
     """更新並寫入爬蟲狀態與進度到 user_data/crawler_status.json"""

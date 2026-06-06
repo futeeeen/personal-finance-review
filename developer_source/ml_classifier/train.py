@@ -164,8 +164,12 @@ def load_user_invoice_samples():
     """
     從 user_data/invoice_data.json 載入使用者已清洗且被正確歸類的真實消費發票
     """
-    path = os.path.join(parent_dir, "user_data", "invoice_data.json")
+    root_dir = parent_dir
+    if os.path.basename(parent_dir) == "developer_source":
+        root_dir = os.path.dirname(parent_dir)
+    path = os.path.join(root_dir, "user_data", "invoice_data.json")
     if not os.path.exists(path):
+
         print("[ML 訓練] 警告：找不到歷史發票資料庫，將僅使用內建數據集進行訓練。")
         return []
         

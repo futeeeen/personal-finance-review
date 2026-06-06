@@ -21,9 +21,12 @@ class TaiwanEInvoiceClient:
             else:
                 try:
                     base_dir = os.path.dirname(os.path.abspath(__file__))
+                    if os.path.basename(base_dir) == "developer_source":
+                        base_dir = os.path.dirname(base_dir)
                 except NameError:
                     base_dir = os.getcwd()
             self.config_path = os.path.join(base_dir, "user_data", "config.json")
+
         else:
             self.config_path = config_path
         self.app_id = ""

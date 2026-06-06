@@ -10,7 +10,11 @@ const crawlerApiPlugin = () => ({
   configureServer(server) {
     server.middlewares.use((req, res, next) => {
       const url = new URL(req.url, 'http://localhost')
-      const statusPath = path.join(process.cwd(), 'user_data', 'crawler_status.json')
+      let baseDir = process.cwd();
+      if (path.basename(baseDir) === 'developer_source') {
+        baseDir = path.dirname(baseDir);
+      }
+      const statusPath = path.join(baseDir, 'user_data', 'crawler_status.json')
       
       if (url.pathname === '/api/run-crawler') {
         const today = new Date()
@@ -126,7 +130,11 @@ const crawlerApiPlugin = () => ({
         }
         
       } else if (url.pathname === '/data/invoice_data.json') {
-        const dbPath = path.join(process.cwd(), 'user_data', 'invoice_data.json')
+        let baseDir = process.cwd();
+        if (path.basename(baseDir) === 'developer_source') {
+          baseDir = path.dirname(baseDir);
+        }
+        const dbPath = path.join(baseDir, 'user_data', 'invoice_data.json')
         if (fs.existsSync(dbPath)) {
           res.writeHead(200, {
             'Content-Type': 'application/json; charset=utf-8',

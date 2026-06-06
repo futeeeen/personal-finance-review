@@ -32,7 +32,8 @@ import {
   ChevronUp,
   HelpCircle,
   Palette,
-  CalendarRange
+  CalendarRange,
+  Sparkles
 } from 'lucide-react';
 
 // 定義分類的色彩映射 (對應 CSS 變數，支援風格切換時即時變色)
@@ -106,6 +107,8 @@ function App() {
   const [crawlerLoading, setCrawlerLoading] = useState(false);
   const [crawlerError, setCrawlerError] = useState(null);
   const [crawlerSuccess, setCrawlerSuccess] = useState(false);
+  const [crawlerStatusMessage, setCrawlerStatusMessage] = useState('準備就緒');
+  const [crawlerStatusStep, setCrawlerStatusStep] = useState('idle');
   
   // 退貨明細彈出視窗狀態
   const [showRefundModal, setShowRefundModal] = useState(false);
@@ -595,8 +598,8 @@ function App() {
   
   const getEarliestSelectableDateStr = () => {
     const d = new Date();
-    // 往回推 8 個月，並將日期設為該月第一天，動態計算 9 個月查詢上限，避免硬編碼
-    const targetDate = new Date(d.getFullYear(), d.getMonth() - 8, 1);
+    // 往回推 7 個月，並將日期設為該月第一天，動態計算 8 個月查詢上限，避免硬編碼
+    const targetDate = new Date(d.getFullYear(), d.getMonth() - 7, 1);
     const yyyy = targetDate.getFullYear();
     const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
     return `${yyyy}-${mm}-01`;
@@ -616,7 +619,9 @@ function App() {
     try {
       // 讀取 Python data_cleaner 產出的靜態 JSON 數據
       const response = await fetch('/data/invoice_data.json');
-      if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('FIRST_TIME_USE');
+      } else if (!response.ok) {
         throw new Error('找不到發票數據檔案。請確保已執行過發票下載或同步！');
       }
       const jsonData = await response.json();
@@ -638,7 +643,11 @@ function App() {
     setCrawlerLoading(true);
     setCrawlerError(null);
     setCrawlerSuccess(false);
+    setCrawlerStatusMessage('正在發送啟動請求...');
+    setCrawlerStatusStep('init');
     
+    let intervalId = null;
+
     try {
       // 自動使用本地最新發票日期及今天日期範圍進行下載，避免手動輸入
       const latestLocalStr = data?.summary?.maxDate || getEarliestSelectableDateStr();
@@ -652,105 +661,290 @@ function App() {
       
       const response = await fetch(`/api/run-crawler?start=${startFormatted}&end=${endFormatted}`);
       if (!response.ok) {
-        throw new Error('同步請求失敗，請確認 Vite Dev Server 是否正常運行！');
+        throw new Error('同步請求失敗，請確認伺服器是否正常運行！');
       }
       
       const result = await response.json();
-      if (result.success) {
-        setCrawlerSuccess(true);
-        // 成功後重新加載數據
-        await fetchInvoiceData();
-      } else {
-        throw new Error(result.stderr || '自動化更新失敗。可能原因：您手動關閉了瀏覽器、登入失敗或下載超時。');
+      if (!result.success) {
+        throw new Error(result.message || '無法啟動同步任務');
       }
+
+      setCrawlerStatusMessage('同步任務已啟動，正在初始化...');
+      
+      // 啟動成功，開始輪詢狀態
+      intervalId = setInterval(async () => {
+        try {
+          const statusRes = await fetch('/api/crawler-status');
+          if (!statusRes.ok) return;
+          const statusData = await statusRes.json();
+          
+          setCrawlerStatusMessage(statusData.message || '進行中...');
+          setCrawlerStatusStep(statusData.step || statusData.status || 'running');
+
+          if (statusData.status === 'success') {
+            clearInterval(intervalId);
+            setCrawlerSuccess(true);
+            setCrawlerLoading(false);
+            await fetchInvoiceData();
+          } else if (statusData.status === 'error') {
+            clearInterval(intervalId);
+            setCrawlerError(statusData.message || '自動化更新失敗。');
+            setCrawlerStatusStep('error');
+          }
+        } catch (pollErr) {
+          console.error('輪詢狀態出錯:', pollErr);
+        }
+      }, 1000);
+
     } catch (err) {
       console.error(err);
       setCrawlerError(err.message);
-    } finally {
-      setCrawlerLoading(false);
+      setCrawlerStatusStep('error');
+      setCrawlerStatusMessage(err.message);
+      if (intervalId) clearInterval(intervalId);
     }
   };
 
-  const renderCrawlerLoadingOverlay = () => (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.5)',
-      backdropFilter: 'blur(12px)',
-      zIndex: 99999,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      color: 'var(--text-primary)'
-    }}>
-      <div className="glass-card" style={{
-        maxWidth: '500px',
+  const renderProgressSteps = (currentStep) => {
+    const steps = [
+      { id: 'browser', label: '啟動瀏覽器並載入登入網頁', activeSteps: ['init', 'browser_started', 'loading_login'] },
+      { id: 'captcha', label: '輸入圖形驗證碼並登入 (需手動)', activeSteps: ['captcha', 'waiting_captcha'] },
+      { id: 'download', label: '大平台批次下載發票明細', activeSteps: ['login_success', 'downloading'] },
+      { id: 'cleaning', label: 'Pandas 資料清洗與財務分析', activeSteps: ['cleaning'] },
+      { id: 'done', label: '同步完成！', activeSteps: ['done', 'success'] }
+    ];
+
+    // 找出當前處於哪一個步驟
+    let currentIdx = -1;
+    for (let i = 0; i < steps.length; i++) {
+      if (steps[i].activeSteps.includes(currentStep)) {
+        currentIdx = i;
+        break;
+      }
+    }
+
+    // 如果發生錯誤，根據訊息猜測是在哪個步驟失敗
+    if (currentStep === 'error') {
+      if (crawlerStatusMessage.includes('清洗') || crawlerStatusMessage.includes('分析')) {
+        currentIdx = 3;
+      } else if (crawlerStatusMessage.includes('下載') || crawlerStatusMessage.includes('CSV')) {
+        currentIdx = 2;
+      } else if (crawlerStatusMessage.includes('登入') || crawlerStatusMessage.includes('驗證碼') || crawlerStatusMessage.includes('接管')) {
+        currentIdx = 1;
+      } else {
+        currentIdx = 0;
+      }
+    }
+
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.8rem',
         width: '100%',
-        padding: '2rem',
-        textAlign: 'center',
+        textAlign: 'left',
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid rgba(255, 255, 255, 0.05)',
+        borderRadius: '12px',
+        padding: '1.2rem',
+        marginTop: '0.2rem',
+        marginBottom: '0.2rem',
+        boxSizing: 'border-box'
+      }}>
+        {steps.map((step, idx) => {
+          const isCompleted = currentStep === 'done' || currentStep === 'success' || (currentIdx > idx && currentStep !== 'error');
+          const isActive = currentIdx === idx && currentStep !== 'error';
+          const isFailed = currentStep === 'error' && currentIdx === idx;
+          
+          let icon = (
+            <div style={{
+              width: '18px',
+              height: '18px',
+              borderRadius: '50%',
+              border: '2px solid rgba(255, 255, 255, 0.15)',
+              display: 'inline-block',
+              boxSizing: 'border-box'
+            }}></div>
+          );
+          let color = 'var(--text-muted)';
+          let fontWeight = '400';
+
+          if (isCompleted) {
+            icon = (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            );
+            color = 'rgba(255, 255, 255, 0.85)';
+            fontWeight = '500';
+          } else if (isActive) {
+            icon = (
+              <div className="spin" style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: '2px solid var(--primary)',
+                borderTopColor: 'transparent',
+                boxSizing: 'border-box',
+                display: 'block'
+              }}></div>
+            );
+            color = 'var(--primary)';
+            fontWeight = '600';
+          } else if (isFailed) {
+            icon = (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            );
+            color = 'var(--danger)';
+            fontWeight = '600';
+          }
+
+          return (
+            <div key={step.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.9rem', color }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px' }}>
+                {icon}
+              </div>
+              <span style={{ transition: 'all 0.3s ease' }}>{step.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderCrawlerLoadingOverlay = () => {
+    const isError = crawlerStatusStep === 'error';
+    const isCaptcha = crawlerStatusStep === 'captcha' || crawlerStatusStep === 'waiting_captcha';
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(12px)',
+        zIndex: 99999,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '1.5rem',
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-        border: '1px solid var(--border-color)',
-        background: 'var(--bg-card)'
+        justifyContent: 'center',
+        padding: '2rem',
+        color: 'var(--text-primary)'
       }}>
-        <div className="kpi-icon-container blue" style={{ width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <RefreshCw size={32} className="spin" />
-        </div>
-        <div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>機器人正在自動同步發票...</h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>查詢起跨：{startDate} ~ {endDate}</p>
-        </div>
-        
-        <div style={{
-          background: 'var(--bg-item)',
-          border: '1px solid var(--border-item)',
-          borderRadius: '0.75rem',
-          padding: '1rem',
-          textAlign: 'left',
-          fontSize: '0.85rem',
-          color: 'var(--text-secondary)',
+        <div className="glass-card" style={{
+          maxWidth: '500px',
+          width: '100%',
+          padding: '2rem',
+          textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
-          width: '100%'
+          alignItems: 'center',
+          gap: '1.5rem',
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-card)'
         }}>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>1.</span>
-            <span>已自動開啟財政部大平台的登入網頁。</span>
+          <div className={`kpi-icon-container ${isError ? 'red' : 'blue'}`} style={{ width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isError ? (
+              <ShieldAlert size={32} style={{ color: 'var(--danger)' }} />
+            ) : (
+              <RefreshCw size={32} className={isCaptcha ? "" : "spin"} />
+            )}
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>2.</span>
-            <span>您的手機號碼與驗證碼已為您預填完成（若已在設定檔中填寫）。</span>
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+              {isError ? '自動同步失敗' : '機器人正在自動同步發票...'}
+            </h2>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>查詢區間：{startDate} ~ {endDate}</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>3.</span>
-            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>請在開啟的瀏覽器視窗中，手動輸入「圖形驗證碼」並點擊「登入」！</span>
+          
+          {/* 警告彈窗區：如果需要手動接管輸入驗證碼 */}
+          {isCaptcha && (
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.12)',
+              border: '1px solid rgba(234, 179, 8, 0.5)',
+              borderRadius: '12px',
+              padding: '1rem',
+              color: '#eab308',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              width: '100%',
+              textAlign: 'center',
+              boxShadow: '0 0 10px rgba(234, 179, 8, 0.15)',
+              lineHeight: '1.5'
+            }}>
+              ⚠️ 需要手動接管：請點選開啟的瀏覽器視窗，輸入圖形驗證碼並手動點擊「登入」！機器人在登入成功後將會自動繼續下載。
+            </div>
+          )}
+
+          {/* 步驟指示器 */}
+          {renderProgressSteps(crawlerStatusStep)}
+
+          {/* 即時進度顯示 */}
+          <div style={{
+            background: 'var(--bg-item)',
+            border: '1px solid var(--border-item)',
+            borderRadius: '0.75rem',
+            padding: '1rem',
+            width: '100%',
+            textAlign: 'left',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: isError ? 'var(--danger)' : (isCaptcha ? '#eab308' : 'var(--primary)'),
+                boxShadow: isError ? '0 0 6px var(--danger)' : (isCaptcha ? '0 0 6px #eab308' : '0 0 6px var(--primary)')
+              }}></span>
+              <span style={{ fontWeight: 'bold' }}>目前進度:</span>
+              <span>{crawlerStatusMessage}</span>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>4.</span>
-            <span>登入後，機器人將自動設定日期並勾選清單，自動觸發明細 CSV 下載。</span>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>5.</span>
-            <span>下載成功後將自動關閉瀏覽器，呼叫 Pandas 進行資料清洗，完成後此網頁將自動更新！</span>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', alignItems: 'center' }}>
-          <Info size={14} />
-          <span>請勿關閉此控制台。查詢歷史發票可能需要 10~30 秒。</span>
+          
+          {isError ? (
+            <button
+              onClick={() => {
+                setCrawlerLoading(false);
+                setCrawlerError(null);
+              }}
+              style={{
+                background: 'linear-gradient(135deg, var(--danger) 0%, #be123c 100%)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.6rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
+                transition: 'all 0.2s ease',
+                width: '100%'
+              }}
+            >
+              關閉視窗
+            </button>
+          ) : (
+            <div style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', alignItems: 'center' }}>
+              <Info size={14} />
+              <span>請勿關閉網頁。同步發票可能需要 10~60 秒。</span>
+            </div>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const toggleInvoiceExpand = (invNum) => {
     setExpandedInvoices(prev => ({
@@ -770,12 +964,22 @@ function App() {
   }
 
   if (error || !data) {
+    const isFirstTime = error === 'FIRST_TIME_USE' || !error;
     return (
       <div className="loading-wrapper" style={{ padding: '3rem', textAlign: 'center', maxWidth: '600px', margin: '100px auto' }}>
-        <ShieldAlert size={64} style={{ color: 'var(--danger)', marginBottom: '1rem' }} />
-        <h2 style={{ fontFamily: 'Outfit, sans-serif', marginBottom: '1rem', color: 'var(--text-primary)' }}>載入發票數據失敗</h2>
+        {isFirstTime ? (
+          <Sparkles size={64} style={{ color: 'var(--primary)', marginBottom: '1rem' }} />
+        ) : (
+          <ShieldAlert size={64} style={{ color: 'var(--danger)', marginBottom: '1rem' }} />
+        )}
+        <h2 style={{ fontFamily: 'Outfit, sans-serif', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+          {isFirstTime ? '歡迎使用個人發票財務儀表板' : '載入發票數據失敗'}
+        </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem', lineHeight: '1.6' }}>
-          {error || '未偵測到本地 JSON 數據。請先在專案目錄下執行 Python 腳本產生發票檔案！'}
+          {isFirstTime 
+            ? '感謝您的使用！目前尚未匯入任何發票資料。請點擊下方的「一鍵同步雲端發票」按鈕開始取得您的真實發票，或者您也可以在 user_data/config.json 中填寫載具帳密以啟用自動登入。'
+            : error
+          }
         </p>
         
         {/* 在錯誤頁面提供一鍵同步按鈕，免開終端機 */}

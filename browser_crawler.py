@@ -1,12 +1,40 @@
 import os
 import json
 import time
+import sys
 from playwright.sync_api import sync_playwright
+
+def get_user_data_path(*paths):
+    """
+    獲取與執行檔/腳本同級之 user_data/ 下的絕對路徑。
+    若是打包成 EXE，則以 EXE 所在同級資料夾為準；
+    若是開發環境，則以專案根目錄為準。
+    """
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, "user_data", *paths)
+
+def update_crawler_status(status, message, step=None, error=None):
+    """更新並寫入爬蟲狀態與進度到 user_data/crawler_status.json"""
+    status_path = get_user_data_path("crawler_status.json")
+    status_data = {
+        "status": status,
+        "message": message,
+        "step": step or status,
+        "error": error,
+        "timestamp": time.time()
+    }
+    # 確保資料夾存在
+    os.makedirs(os.path.dirname(status_path), exist_ok=True)
+    with open(status_path, "w", encoding="utf-8") as f:
+        json.dump(status_data, f, ensure_ascii=False, indent=2)
 
 def init_user_data_directory():
     """初始化並建立分離的資料夾與預設設定檔"""
-    os.makedirs(os.path.join("user_data", "invoices"), exist_ok=True)
-    config_path = os.path.join("user_data", "config.json")
+    os.makedirs(get_user_data_path("invoices"), exist_ok=True)
+    config_path = get_user_data_path("config.json")
     if not os.path.exists(config_path):
         default_config = {
             "phoneNo": "請輸入您的手機號碼 (10碼)",
@@ -22,7 +50,7 @@ def init_user_data_directory():
 def load_config():
     """載入設定檔"""
     init_user_data_directory()
-    config_path = os.path.join("user_data", "config.json")
+    config_path = get_user_data_path("config.json")
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -36,10 +64,10 @@ def run_browser_automation():
     end_date = datetime.now()
     end_date_str = end_date.strftime("%Y/%m/%d")
     
-    # 往回推 8 個月，並將日期設為該月第一天
-    # 例如當前為 2026/05，回推 8 個月即為 2025/09/01
+    # 往回推 7 個月，並將日期設為該月第一天
+    # 例如當前為 2026/06，回推 7 個月即為 2025/11/01
     y = end_date.year
-    m = end_date.month - 8
+    m = end_date.month - 7
     while m <= 0:
         m += 12
         y -= 1
@@ -58,13 +86,14 @@ def run_browser_automation():
     verification_code = config.get("verificationCode", "")
     
     # 確保資料夾存在
-    os.makedirs(os.path.join("user_data", "invoices"), exist_ok=True)
+    os.makedirs(get_user_data_path("invoices"), exist_ok=True)
     
     print("\n" + "="*70)
     print(" === 財政部電子發票大平台 - 全自動接手下載爬蟲系統 ===")
     print("="*70)
     
     print("[提示] 正在初始化 Playwright 瀏覽器核心...")
+    update_crawler_status("running", "正在初始化 Playwright 瀏覽器核心...", "init")
     
     with sync_playwright() as p:
         try:
@@ -73,15 +102,19 @@ def run_browser_automation():
             try:
                 browser = p.chromium.launch(headless=False, channel="chrome", args=["--start-maximized"])
                 print("[爬蟲] 成功載入本地 Google Chrome 瀏覽器")
+                update_crawler_status("running", "成功載入本地 Google Chrome，準備載入登入頁面...", "browser_started")
             except Exception:
                 try:
                     browser = p.chromium.launch(headless=False, channel="msedge", args=["--start-maximized"])
                     print("[爬蟲] 成功載入本地 Microsoft Edge 瀏覽器")
+                    update_crawler_status("running", "成功載入本地 Microsoft Edge，準備載入登入頁面...", "browser_started")
                 except Exception:
                     browser = p.chromium.launch(headless=False, args=["--start-maximized"])
                     print("[爬蟲] 成功載入 Playwright 預設 Chromium 瀏覽器")
+                    update_crawler_status("running", "成功載入 Playwright 預設 Chromium，準備載入登入頁面...", "browser_started")
         except Exception as e:
             print(f"\n[錯誤] 無法啟動任何相容的 Chromium 瀏覽器核心: {e}")
+            update_crawler_status("error", f"無法啟動瀏覽器核心: {str(e)}", "error", str(e))
             print("建議執行以下命令安裝 Playwright 瀏覽器相依組件或安裝 Google Chrome/Edge:")
             print("  playwright install chromium")
             print("\n您可以改採「完全手動」方案：")
@@ -99,6 +132,7 @@ def run_browser_automation():
         page.on("console", lambda msg: print(f"[瀏覽器主控台] {msg.text.encode('ascii', 'backslashreplace').decode()}"))
         
         print("[爬蟲] 正在載入新版財政部電子發票整合服務平台登入頁面...")
+        update_crawler_status("running", "正在載入財政部電子發票登入頁面...", "loading_login")
         page.goto("https://www.einvoice.nat.gov.tw/accounts/login/mw")
         
         page.wait_for_timeout(3000)
@@ -160,6 +194,7 @@ def run_browser_automation():
         print("     2. 點選「登入」按鈕。")
         print(" [提示] 登入成功後，機器人將「自動接手」進行網頁導航、日期輸入與下載！")
         print("*"*65 + "\n")
+        update_crawler_status("waiting_captcha", "⚠️ 請在彈出的瀏覽器視窗中輸入「圖形驗證碼」，並點擊「登入」！", "captcha")
         
         # 1. 偵測登入成功 (等待 URL 重定向)
         print("[爬蟲] 正在偵測登入狀態，請輸入圖形驗證碼並手動點擊「登入」...")
@@ -175,9 +210,11 @@ def run_browser_automation():
             
         if not logged_in or page.is_closed():
             print("[爬蟲] 未偵測到登入，或瀏覽器已關閉。腳本退出。")
+            update_crawler_status("error", "未偵測到登入，或瀏覽器已關閉。同步取消。", "error", "未偵測到登入，或瀏覽器已關閉。")
             return
 
         print("[爬蟲] 偵測到登入成功！機器人正在接管瀏覽器...")
+        update_crawler_status("running", "登入成功！正在接管瀏覽器并跳轉至發票查詢...", "login_success")
         page.wait_for_timeout(3000) # 等待登入後首頁載入完成
         
         # 2. 自動重定向跳轉至新版發票查詢頁面
@@ -232,7 +269,7 @@ def run_browser_automation():
         print(f"[爬蟲] 配合財政部限制「僅能查詢相同月份」，已將日期自動分割為 {len(month_ranges)} 個月份，並將由新至舊逆序批次下載...")
         
         # 清除 user_data/invoices 目錄下的舊 invoices*.csv 發票檔案，防止新舊資料混雜
-        csv_dir = os.path.join("user_data", "invoices")
+        csv_dir = get_user_data_path("invoices")
         for file_name in os.listdir(csv_dir):
             if file_name.startswith("invoices") and file_name.endswith(".csv"):
                 try:
@@ -246,6 +283,7 @@ def run_browser_automation():
         for r_idx, (m_start, m_end) in enumerate(month_ranges):
             print("\n" + "-" * 60)
             print(f"[爬蟲] >>> 正在批次下載第 {r_idx + 1}/{len(month_ranges)} 個月份: {m_start} ~ {m_end}")
+            update_crawler_status("running", f"正在下載發票明細：{m_start[:7]} ({r_idx + 1}/{len(month_ranges)})...", "downloading")
             print("-" * 60)
             
             # 只有當前頁面不是搜尋頁面時，才導航載入，防範 SPA 重劃/重載導致的 Loading 畫面閃爍與 JS Context 銷毀競態！
@@ -699,7 +737,7 @@ def run_browser_automation():
             print("[爬蟲] 正在尋找 CSV 下載按鈕...")
             download_success = False
             target_filename = f"invoices_{m_start.replace('/', '')}_{m_end.replace('/', '')}.csv"
-            target_path = os.path.join("user_data", "invoices", target_filename)
+            target_path = get_user_data_path("invoices", target_filename)
             
             try:
                 download_selectors = [
@@ -769,7 +807,7 @@ def run_browser_automation():
                 
                 print(f"[提示] 機器人正在監控 `user_data/invoices/invoices.csv` 或 {target_filename} 檔案生成...")
                 for _ in range(90):
-                    default_download_path = os.path.join("user_data", "invoices", "invoices.csv")
+                    default_download_path = get_user_data_path("invoices", "invoices.csv")
                     if os.path.exists(default_download_path) and os.path.getsize(default_download_path) > 100:
                         time.sleep(1)
                         os.rename(default_download_path, target_path)
@@ -797,6 +835,7 @@ def run_browser_automation():
         
     print("[爬蟲] 瀏覽器已安全關閉。")
     print("[爬蟲] 正在啟動 Pandas 資料洗滌模組進行處理與更新...")
+    update_crawler_status("running", "下載完成！正在啟動 Pandas 數據分析與分類引擎...", "cleaning")
     
     # 呼叫資料清洗模組
     import data_cleaner
@@ -806,8 +845,10 @@ def run_browser_automation():
         print(" *** 恭喜！發票資料清洗成功，財務分析儀表板已更新！ ***")
         print("    現在您可以開啟 React 網頁 (npm run dev) 檢視您最新的發票財務看板。")
         print("="*70 + "\n")
+        update_crawler_status("success", "發票同步與洗滌完成！網頁即將重新整理...", "done")
     else:
         print("\n[警告] 資料清洗未能順利完成，請檢查 `user_data/invoices/` 目錄下是否確實放有發票 CSV 檔案。")
+        update_crawler_status("error", "發票清洗失敗，請確認是否成功下載 CSV 發票明細檔。", "error", "清洗失敗")
 
 if __name__ == "__main__":
     run_browser_automation()

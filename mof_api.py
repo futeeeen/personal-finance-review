@@ -1,3 +1,5 @@
+import os
+import sys
 import hmac
 import hashlib
 import base64
@@ -14,7 +16,14 @@ class TaiwanEInvoiceClient:
     """
     def __init__(self, config_path=None):
         if config_path is None:
-            self.config_path = os.path.join("user_data", "config.json")
+            if getattr(sys, 'frozen', False):
+                base_dir = os.path.dirname(sys.executable)
+            else:
+                try:
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
+                except NameError:
+                    base_dir = os.getcwd()
+            self.config_path = os.path.join(base_dir, "user_data", "config.json")
         else:
             self.config_path = config_path
         self.app_id = ""

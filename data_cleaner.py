@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 import re
 import json
 import pandas as pd
@@ -7,6 +8,14 @@ import numpy as np
 from datetime import datetime
 from io import StringIO
 from mof_api import TaiwanEInvoiceClient
+
+def get_user_data_path(*paths):
+    """獲取與執行檔/腳本同級之 user_data/ 下的絕對路徑"""
+    if getattr(sys, 'frozen', False):
+        base_dir = os.path.dirname(sys.executable)
+    else:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, "user_data", *paths)
 
 # 用於快取從 CSV 解析出來的品項明細
 _csv_details_cache = {}
@@ -490,7 +499,7 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
     
     # 偵測本地 user_data/invoices/*.csv 檔案 (支援批次跨月發票 CSV 合併載入)
     csv_files = []
-    data_dir = os.path.join(os.getcwd(), "user_data", "invoices")
+    data_dir = get_user_data_path("invoices")
     if os.path.exists(data_dir):
         csv_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.csv')]
         if csv_files:
@@ -773,11 +782,10 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
     }
     
     # 確保寫入目錄存在 (寫入分離資料夾 user_data/invoice_data.json)
-    target_dir = os.path.join(os.getcwd(), "user_data")
+    target_file = get_user_data_path("invoice_data.json")
+    target_dir = os.path.dirname(target_file)
     if not os.path.exists(target_dir):
         os.makedirs(target_dir, exist_ok=True)
-        
-    target_file = os.path.join(target_dir, "invoice_data.json")
     with open(target_file, "w", encoding="utf-8") as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
         

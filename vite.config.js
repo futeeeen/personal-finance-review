@@ -1,13 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { spawn } from 'child_process'
+import fs from 'fs'
+import path from 'path'
 
-// 自訂 Vite 伺服器中間件，提供後端 API 執行 Playwright 爬蟲
+// 自訂 Vite 伺服器中間件，提供後端 API 執行 Playwright 爬蟲與狀態查詢
 const crawlerApiPlugin = () => ({
   name: 'crawler-api-plugin',
   configureServer(server) {
     server.middlewares.use((req, res, next) => {
       const url = new URL(req.url, 'http://localhost')
+      const statusPath = path.join(process.cwd(), 'user_data', 'crawler_status.json')
       
       if (url.pathname === '/api/run-crawler') {
         const today = new Date()
@@ -16,8 +19,8 @@ const crawlerApiPlugin = () => ({
         const dd = String(today.getDate()).padStart(2, '0')
         const defaultEnd = `${yyyy}/${mm}/${dd}`
         
-        // 動態計算 9 個月前的第一天作為最早可查詢日期，避免硬編碼造成未來執行錯誤
-        const startDateObj = new Date(today.getFullYear(), today.getMonth() - 8, 1)
+        // 動態計算 7 個月前的第一天作為最早可查詢日期，避免大平台拒絕超時下載
+        const startDateObj = new Date(today.getFullYear(), today.getMonth() - 7, 1)
         const startYyyy = startDateObj.getFullYear()
         const startMm = String(startDateObj.getMonth() + 1).padStart(2, '0')
         const defaultStart = `${startYyyy}/${startMm}/01`
@@ -25,60 +28,86 @@ const crawlerApiPlugin = () => ({
         const start = url.searchParams.get('start') || defaultStart
         const end = url.searchParams.get('end') || defaultEnd
         
-        res.writeHead(200, {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive'
-        })
-        
         console.log(`[DevServer] 收到爬蟲請求，時間區間: ${start} ~ ${end}`)
+
+        // 檢查是否已經有爬蟲在執行
+        if (fs.existsSync(statusPath)) {
+          try {
+            const statusData = JSON.parse(fs.readFileSync(statusPath, 'utf8'))
+            if (statusData.status === 'running' || statusData.status === 'waiting_captcha') {
+              res.writeHead(400, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Access-Control-Allow-Origin': '*'
+              })
+              res.end(JSON.stringify({ success: false, message: '已有爬蟲正在運行中' }))
+              return
+            }
+          } catch (e) {
+            // 解析出錯忽略，當作無狀態處理
+          }
+        }
+
+        // 寫入初始狀態以防前端輪詢空窗
+        const initialStatus = {
+          status: 'running',
+          message: '正在啟動同步任務，請稍候...',
+          step: 'init',
+          error: null,
+          timestamp: Date.now() / 1000
+        }
+        fs.mkdirSync(path.dirname(statusPath), { recursive: true })
+        fs.writeFileSync(statusPath, JSON.stringify(initialStatus, null, 2), 'utf8')
         
-        // 呼叫 python browser_crawler.py 並帶入參數
+        // 呼叫 python browser_crawler.py 並帶入參數，在背景啟動
         const pyProcess = spawn('python', ['browser_crawler.py', '--start', start, '--end', end], {
           cwd: process.cwd(),
           shell: true
         })
         
-        let stdoutData = ''
-        let stderrData = ''
-        
         pyProcess.stdout.on('data', (data) => {
-          const str = data.toString()
-          console.log(`[Crawler] ${str.trim()}`)
-          stdoutData += str
+          console.log(`[Crawler] ${data.toString().trim()}`)
         })
         
         pyProcess.stderr.on('data', (data) => {
-          const str = data.toString()
-          console.error(`[Crawler Error] ${str.trim()}`)
-          stderrData += str
+          console.error(`[Crawler Error] ${data.toString().trim()}`)
         })
         
         pyProcess.on('close', (code) => {
-          console.log(`[DevServer] 爬蟲程式執行完畢，結束代碼: ${code}`)
-          
-          res.end(JSON.stringify({
-            success: code === 0,
-            code: code,
-            stdout: stdoutData,
-            stderr: stderrData
-          }))
+          console.log(`[DevServer] 背景爬蟲程式執行完畢，結束代碼: ${code}`)
         })
+
+        // 立即向前端回傳啟動成功響應
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        })
+        res.end(JSON.stringify({ success: true, message: '已在背景啟動同步' }))
+        
+      } else if (url.pathname === '/api/crawler-status') {
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        })
+        if (fs.existsSync(statusPath)) {
+          res.end(fs.readFileSync(statusPath))
+        } else {
+          res.end(JSON.stringify({ status: 'idle', message: '準備就緒', step: 'idle', error: null }))
+        }
         
       } else if (url.pathname === '/data/invoice_data.json') {
-        const fs = require('fs')
-        const path = require('path')
         const dbPath = path.join(process.cwd(), 'user_data', 'invoice_data.json')
         if (fs.existsSync(dbPath)) {
           res.writeHead(200, {
-            'Content-Type': 'application/json; charset=utf-8'
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*'
           })
           res.end(fs.readFileSync(dbPath))
         } else {
           res.writeHead(404, {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
           })
-          res.end(JSON.stringify({ error: 'Database file not found' }))
+          res.end(JSON.stringify({ error: 'Database file not found', code: 'FIRST_TIME_USE' }))
         }
       } else {
         next()

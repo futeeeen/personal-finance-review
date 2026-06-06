@@ -37,8 +37,8 @@ def init_user_data_directory():
     config_path = get_user_data_path("config.json")
     if not os.path.exists(config_path):
         default_config = {
-            "phoneNo": "請輸入您的手機號碼 (10碼)",
-            "verificationCode": "請輸入您的載具密碼 (首字通常為/)"
+            "phoneNo": "",
+            "verificationCode": ""
         }
         with open(config_path, "w", encoding="utf-8") as f:
             json.dump(default_config, f, ensure_ascii=False, indent=2)
@@ -148,7 +148,7 @@ def run_browser_automation():
             phone_filled = False
             for sel in phone_selectors:
                 if page.locator(sel).is_visible():
-                    if phone_no and "09" in phone_no and phone_no != "0912345678":
+                    if phone_no and phone_no.strip() and phone_no != "請輸入您的手機號碼 (10碼)" and phone_no != "0912345678":
                         page.locator(sel).fill(phone_no)
                         phone_filled = True
                         break
@@ -160,7 +160,7 @@ def run_browser_automation():
             pwd_filled = False
             for sel in pwd_selectors:
                 if page.locator(sel).is_visible():
-                    if verification_code and verification_code != "TEST_PASSWORD" and verification_code != "YOUR_CARRIER_PASSWORD":
+                    if verification_code and verification_code.strip() and verification_code != "請輸入您的載具密碼 (首字通常為/)" and verification_code != "TEST_PASSWORD" and verification_code != "YOUR_CARRIER_PASSWORD":
                         page.locator(sel).fill(verification_code)
                         pwd_filled = True
                         break

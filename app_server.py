@@ -123,10 +123,17 @@ class SPAAndApiHandler(SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"[本地伺服器] 背景爬蟲執行出錯: {e}")
                 try:
-                    import browser_crawler
-                    browser_crawler.update_crawler_status("error", f"同步出錯: {str(e)}", "error", str(e))
-                except Exception:
-                    pass
+                    status_file = get_user_data_path("crawler_status.json")
+                    with open(status_file, "w", encoding="utf-8") as f:
+                        json.dump({
+                            "status": "error",
+                            "message": f"啟動或同步出錯: {str(e)}。請確認 Python 依賴環境是否完整！",
+                            "step": "error",
+                            "error": str(e),
+                            "timestamp": time.time()
+                        }, f, ensure_ascii=False, indent=2)
+                except Exception as ex:
+                    print(f"[本地伺服器] 寫入錯誤狀態檔失敗: {ex}")
 
         # 寫入初始狀態以防輪詢時讀到空或舊狀態
         try:

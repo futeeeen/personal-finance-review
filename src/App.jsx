@@ -661,7 +661,14 @@ function App() {
       
       const response = await fetch(`/api/run-crawler?start=${startFormatted}&end=${endFormatted}`);
       if (!response.ok) {
-        throw new Error('同步請求失敗，請確認伺服器是否正常運行！');
+        let errMsg = '同步請求失敗，請確認伺服器是否正常運行！';
+        try {
+          const errJson = await response.json();
+          if (errJson && errJson.message) {
+            errMsg = errJson.message;
+          }
+        } catch (e) {}
+        throw new Error(errMsg);
       }
       
       const result = await response.json();

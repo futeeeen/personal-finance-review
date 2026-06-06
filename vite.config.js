@@ -72,9 +72,40 @@ const crawlerApiPlugin = () => ({
           console.error(`[Crawler Error] ${data.toString().trim()}`)
         })
         
+        pyProcess.on('error', (err) => {
+          console.error(`[DevServer] 無法啟動 Python 爬蟲: ${err.message}`)
+          writeErrorStatus(`無法啟動 Python 爬蟲: ${err.message}。請確認 Python 是否已安裝並加入 PATH！`, err.message)
+        })
+        
         pyProcess.on('close', (code) => {
           console.log(`[DevServer] 背景爬蟲程式執行完畢，結束代碼: ${code}`)
+          if (code !== 0) {
+            // 如果異常退出，且狀態仍為 running，則寫入錯誤狀態
+            if (fs.existsSync(statusPath)) {
+              try {
+                const statusData = JSON.parse(fs.readFileSync(statusPath, 'utf8'))
+                if (statusData.status === 'running' || statusData.status === 'waiting_captcha') {
+                  writeErrorStatus(`同步異常退出 (錯誤代碼: ${code})，請確認您是否在正確的 Python 環境下執行。`, `Exit code ${code}`)
+                }
+              } catch (e) {}
+            }
+          }
         })
+        
+        function writeErrorStatus(msg, errDetail) {
+          try {
+            const errorStatus = {
+              status: 'error',
+              message: msg,
+              step: 'error',
+              error: errDetail,
+              timestamp: Date.now() / 1000
+            }
+            fs.writeFileSync(statusPath, JSON.stringify(errorStatus, null, 2), 'utf8')
+          } catch (e) {
+            console.error('[DevServer] 寫入錯誤狀態失敗:', e)
+          }
+        }
 
         // 立即向前端回傳啟動成功響應
         res.writeHead(200, {

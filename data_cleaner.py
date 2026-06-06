@@ -42,55 +42,16 @@ def parse_taiwan_date(date_str):
     except Exception as e:
         return pd.NaT
 
-_custom_rules_cache = None
-
-def get_custom_rules():
-    global _custom_rules_cache
-    if _custom_rules_cache is None:
-        try:
-            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                    _custom_rules_cache = config.get("custom_category_rules", {})
-            else:
-                _custom_rules_cache = {}
-        except Exception:
-            _custom_rules_cache = {}
-    return _custom_rules_cache
-
-_custom_rules_cache = None
-
-def get_custom_rules():
-    global _custom_rules_cache
-    if _custom_rules_cache is None:
-        try:
-            config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                    _custom_rules_cache = config.get("custom_category_rules", {})
-            else:
-                _custom_rules_cache = {}
-        except Exception:
-            _custom_rules_cache = {}
-    return _custom_rules_cache
-
 def classify_item(item_desc, seller_name):
     """
     利用品項描述與商家名稱，自動進行消費分類標籤標記。
-    採用「雙層過濾引擎」：
+    採用「雙層過濾引擎」加上「機器學習」：
     第一階段：品項關鍵字精確匹配 (Item-level matching) - 優先度最高，避免因商場/百貨公司等大賣場商家名稱造成誤判。
     第二階段：商家名稱模糊匹配 (Seller-level matching) - 作為兜底，當品項描述無特徵時，根據購買場所進行合理分類。
+    第三階段：智慧 NLP 機器學習分類 (ML classification) - 當前兩階段皆無判定時，調用機器學習模型預測。
     """
     desc = str(item_desc).lower()
     seller = str(seller_name).lower()
-    
-    # 0. 先檢查自訂分類規則 (由 config.json 提供，支援動態擴展，優先級最高)
-    custom_rules = get_custom_rules()
-    for category, keywords in custom_rules.items():
-        if any(str(kw).lower() in desc for kw in keywords) or any(str(kw).lower() in seller for kw in keywords):
-            return category
 
     # 定義各類別關鍵字 (品項級特徵)
     trans_kws = [
@@ -527,9 +488,9 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
     global _csv_details_cache
     _csv_details_cache = {}
     
-    # 偵測本地 data/*.csv 檔案 (支援批次跨月發票 CSV 合併載入)
+    # 偵測本地 user_data/invoices/*.csv 檔案 (支援批次跨月發票 CSV 合併載入)
     csv_files = []
-    data_dir = os.path.join(os.getcwd(), "data")
+    data_dir = os.path.join(os.getcwd(), "user_data", "invoices")
     if os.path.exists(data_dir):
         csv_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith('.csv')]
         if csv_files:
@@ -811,8 +772,8 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
         "invoices": invoices_list
     }
     
-    # 確保寫入目錄存在 (寫入 React 專案的 public/data/invoice_data.json)
-    target_dir = os.path.join(os.getcwd(), "public", "data")
+    # 確保寫入目錄存在 (寫入分離資料夾 user_data/invoice_data.json)
+    target_dir = os.path.join(os.getcwd(), "user_data")
     if not os.path.exists(target_dir):
         os.makedirs(target_dir, exist_ok=True)
         

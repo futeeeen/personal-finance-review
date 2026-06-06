@@ -12,13 +12,16 @@ class TaiwanEInvoiceClient:
     台灣財政部電子發票 API 介接客戶端 (Taiwan Ministry of Finance E-Invoice Platform API Client)
     支援真實 API 呼叫與離線高品質 Mock 測試模式。
     """
-    def __init__(self, config_path="config.json"):
-        self.config_path = config_path
+    def __init__(self, config_path=None):
+        if config_path is None:
+            self.config_path = os.path.join("user_data", "config.json")
+        else:
+            self.config_path = config_path
         self.app_id = ""
         self.api_key = ""
         self.card_no = ""
         self.card_encrypt = ""
-        self.use_mock = True
+        self.use_mock = False
         
         self.load_config()
 
@@ -31,14 +34,14 @@ class TaiwanEInvoiceClient:
                 self.api_key = config.get("apiKey", "")
                 self.card_no = config.get("cardNo", "")
                 self.card_encrypt = config.get("cardEncrypt", "")
-                self.use_mock = config.get("useMock", True)
+                self.use_mock = config.get("useMock", False)
                 print(f"[MOF API] 設定檔載入成功！當前運行模式: {'MOCK 模擬模式 (離線可跑)' if self.use_mock else '真實 API 連線模式'}")
         except FileNotFoundError:
-            print(f"[MOF API] 找不到設定檔 {self.config_path}，預設啟用 MOCK 模擬模式。")
-            self.use_mock = True
+            print(f"[MOF API] 找不到設定檔 {self.config_path}，使用真實連線模式。")
+            self.use_mock = False
         except Exception as e:
-            print(f"[MOF API] 讀取設定檔失敗: {e}，預設啟用 MOCK 模擬模式。")
-            self.use_mock = True
+            print(f"[MOF API] 讀取設定檔失敗: {e}，使用真實連線模式。")
+            self.use_mock = False
 
     def generate_signature(self, params):
         """

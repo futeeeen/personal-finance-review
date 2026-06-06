@@ -1,5 +1,4 @@
 {
   "phoneNo": "0912345678",
-  "verificationCode": "YOUR_CARRIER_PASSWORD",
-  "useMock": true
+  "verificationCode": "/YOUR_PASSWORD"
 }

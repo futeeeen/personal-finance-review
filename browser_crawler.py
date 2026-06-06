@@ -3,9 +3,26 @@ import json
 import time
 from playwright.sync_api import sync_playwright
 
+def init_user_data_directory():
+    """初始化並建立分離的資料夾與預設設定檔"""
+    os.makedirs(os.path.join("user_data", "invoices"), exist_ok=True)
+    config_path = os.path.join("user_data", "config.json")
+    if not os.path.exists(config_path):
+        default_config = {
+            "phoneNo": "請輸入您的手機號碼 (10碼)",
+            "verificationCode": "請輸入您的載具密碼 (首字通常為/)"
+        }
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(default_config, f, ensure_ascii=False, indent=2)
+        print("\n" + "="*75)
+        print(" [系統初始化] 已為您在 user_data/ 下建立預設的 config.json 設定檔。")
+        print("             (您可以在 user_data/config.json 填入載具帳密以啟用自動登入，或直接在瀏覽器手動輸入)")
+        print("="*75 + "\n")
+
 def load_config():
     """載入設定檔"""
-    config_path = "config.json"
+    init_user_data_directory()
+    config_path = os.path.join("user_data", "config.json")
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -39,30 +56,33 @@ def run_browser_automation():
     config = load_config()
     phone_no = config.get("phoneNo", "")
     verification_code = config.get("verificationCode", "")
-    use_mock = config.get("useMock", True)
     
     # 確保資料夾存在
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(os.path.join("user_data", "invoices"), exist_ok=True)
     
     print("\n" + "="*70)
     print(" === 財政部電子發票大平台 - 全自動接手下載爬蟲系統 ===")
     print("="*70)
     
-    if use_mock:
-        print("[說明] 當前設定為 Mock 模擬模式。")
-        print("       如果您希望進行真實網頁全自動下載，請將 config.json 中的 useMock 改為 false。")
-        print("       現在腳本仍會開啟新版登入頁面供您體驗。")
-        print("-"*70)
-
     print("[提示] 正在初始化 Playwright 瀏覽器核心...")
     
     with sync_playwright() as p:
         try:
-            # 啟動 headed 模式瀏覽器以供使用者手動操作與輸入驗證碼
-            browser = p.chromium.launch(headless=False, args=["--start-maximized"])
+            # 優先嘗試啟動本地 Google Chrome，再嘗試 Microsoft Edge，最後降級至 Playwright 預設 Chromium
+            # 這能保證即使未執行 "playwright install chromium"，也能直接藉由使用者本地的瀏覽器開啟！
+            try:
+                browser = p.chromium.launch(headless=False, channel="chrome", args=["--start-maximized"])
+                print("[爬蟲] 成功載入本地 Google Chrome 瀏覽器")
+            except Exception:
+                try:
+                    browser = p.chromium.launch(headless=False, channel="msedge", args=["--start-maximized"])
+                    print("[爬蟲] 成功載入本地 Microsoft Edge 瀏覽器")
+                except Exception:
+                    browser = p.chromium.launch(headless=False, args=["--start-maximized"])
+                    print("[爬蟲] 成功載入 Playwright 預設 Chromium 瀏覽器")
         except Exception as e:
-            print(f"\n[錯誤] 無法啟動 Chromium 瀏覽器: {e}")
-            print("建議執行以下命令安裝 Playwright 瀏覽器相依組件:")
+            print(f"\n[錯誤] 無法啟動任何相容的 Chromium 瀏覽器核心: {e}")
+            print("建議執行以下命令安裝 Playwright 瀏覽器相依組件或安裝 Google Chrome/Edge:")
             print("  playwright install chromium")
             print("\n您可以改採「完全手動」方案：")
             print("1. 手動使用您平常的瀏覽器開啟財政部電子發票整合服務平台並登入。")
@@ -211,11 +231,12 @@ def run_browser_automation():
         print(f"[爬蟲] 本次任務起迄: {start_date_str} ~ {end_date_str}")
         print(f"[爬蟲] 配合財政部限制「僅能查詢相同月份」，已將日期自動分割為 {len(month_ranges)} 個月份，並將由新至舊逆序批次下載...")
         
-        # 清除 data 目錄下的舊 invoices*.csv 發票檔案，防止新舊資料混雜
-        for file_name in os.listdir("data"):
+        # 清除 user_data/invoices 目錄下的舊 invoices*.csv 發票檔案，防止新舊資料混雜
+        csv_dir = os.path.join("user_data", "invoices")
+        for file_name in os.listdir(csv_dir):
             if file_name.startswith("invoices") and file_name.endswith(".csv"):
                 try:
-                    os.remove(os.path.join("data", file_name))
+                    os.remove(os.path.join(csv_dir, file_name))
                 except Exception:
                     pass
 
@@ -678,7 +699,7 @@ def run_browser_automation():
             print("[爬蟲] 正在尋找 CSV 下載按鈕...")
             download_success = False
             target_filename = f"invoices_{m_start.replace('/', '')}_{m_end.replace('/', '')}.csv"
-            target_path = os.path.join("data", target_filename)
+            target_path = os.path.join("user_data", "invoices", target_filename)
             
             try:
                 download_selectors = [
@@ -739,16 +760,16 @@ def run_browser_automation():
                 print("\n" + "="*70)
                 print(f" -> 批次自動化下載受阻，請在開啟的瀏覽器視窗中對該月份手動操作：")
                 print(f"   1. 請手動在此月份選取全選，並點選「下載明細CSV」或「匯出」。")
-                print(f"   (系統正在自動監控 `data/` 目錄，一旦偵測到下載將自動改名為: {target_filename})")
+                print(f"   (系統正在自動監控 `user_data/invoices/` 目錄，一旦偵測到下載將自動改名為: {target_filename})")
                 print("="*70 + "\n")
                 
                 import sys
                 is_interactive = sys.stdin.isatty()
                 manual_downloaded = False
                 
-                print(f"[提示] 機器人正在監控 `data/invoices.csv` 或 {target_filename} 檔案生成...")
+                print(f"[提示] 機器人正在監控 `user_data/invoices/invoices.csv` 或 {target_filename} 檔案生成...")
                 for _ in range(90):
-                    default_download_path = os.path.join("data", "invoices.csv")
+                    default_download_path = os.path.join("user_data", "invoices", "invoices.csv")
                     if os.path.exists(default_download_path) and os.path.getsize(default_download_path) > 100:
                         time.sleep(1)
                         os.rename(default_download_path, target_path)
@@ -786,7 +807,7 @@ def run_browser_automation():
         print("    現在您可以開啟 React 網頁 (npm run dev) 檢視您最新的發票財務看板。")
         print("="*70 + "\n")
     else:
-        print("\n[警告] 資料清洗未能順利完成，請檢查 `data/` 目錄下是否確實放有發票 CSV 檔案。")
+        print("\n[警告] 資料清洗未能順利完成，請檢查 `user_data/invoices/` 目錄下是否確實放有發票 CSV 檔案。")
 
 if __name__ == "__main__":
     run_browser_automation()

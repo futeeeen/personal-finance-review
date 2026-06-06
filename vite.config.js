@@ -65,6 +65,21 @@ const crawlerApiPlugin = () => ({
           }))
         })
         
+      } else if (url.pathname === '/data/invoice_data.json') {
+        const fs = require('fs')
+        const path = require('path')
+        const dbPath = path.join(process.cwd(), 'user_data', 'invoice_data.json')
+        if (fs.existsSync(dbPath)) {
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8'
+          })
+          res.end(fs.readFileSync(dbPath))
+        } else {
+          res.writeHead(404, {
+            'Content-Type': 'application/json'
+          })
+          res.end(JSON.stringify({ error: 'Database file not found' }))
+        }
       } else {
         next()
       }

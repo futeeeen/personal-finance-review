@@ -162,9 +162,9 @@ def generate_synthetic_samples_from_rules():
 
 def load_user_invoice_samples():
     """
-    從 public/data/invoice_data.json 載入使用者已清洗且被正確歸類的真實消費發票
+    從 user_data/invoice_data.json 載入使用者已清洗且被正確歸類的真實消費發票
     """
-    path = os.path.join(parent_dir, "public", "data", "invoice_data.json")
+    path = os.path.join(parent_dir, "user_data", "invoice_data.json")
     if not os.path.exists(path):
         print("[ML 訓練] 警告：找不到歷史發票資料庫，將僅使用內建數據集進行訓練。")
         return []

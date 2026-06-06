@@ -39,95 +39,87 @@
 
 ## 📂 專案目錄結構與資料分離說明
 
-為了確保程式乾淨與使用者資料隱私，專案架構區分為「程式區」與「資料區」：
+為了讓專案根目錄保持乾淨，只提供使用者直接需要的執行檔，整個專案區分為以下結構：
 
-### 程式區 (可安全提交至 Git 或打包成 EXE)
-* **[browser_crawler.py](browser_crawler.py)**：Playwright 半自動網頁爬蟲，負責輔助大平台登入及引導 CSV 下載。
-* **[data_cleaner.py](data_cleaner.py)**：Pandas 洗滌大腦，優先偵測並清洗 `user_data/invoices/*.csv`。
-* **[ml_classifier/](ml_classifier/)**：NLP + 機器學習智慧分類模組。
-* **[app_server.py](app_server.py)**：打包發行專用本地 Web 伺服器。
-* **[src/](src/)** / **[index.html](index.html)**：React 前端原始碼與網頁入口。
+### 根目錄直接提供使用者 (開箱即用)
+* **[錢去哪了-發票財務儀表板.exe](錢去哪了-發票財務儀表板.exe)**：直接雙擊即可「秒開」啟動本地伺服器，並自動在預設瀏覽器中開啟財務儀表板。不需要安裝任何 Python 或 Node.js 開發環境，也不需要開啟 Conda 命令列。
+* **[_internal/](_internal)**：應用程式執行檔所需的依賴函式庫、Python 本地直譯器與已編譯的前端靜態檔案。
+* **[user_data/](user_data)**：您的個人資料庫（已在 `.gitignore` 中排除，保護您的私密個資與憑證不外流）：
+  * `config.json`：存放手機載具與密碼設定檔。
+  * `invoices/`：存放從大平台上下載的原始 CSV 發票資料。
+  * `invoice_data.json`：清洗合併後的本地發票資料庫。
+* **[README.md](README.md)**：本使用手冊。
 
-### 資料區 (儲存於 `user_data/` 目錄，已由 Git 忽略，不可上傳)
-* **`user_data/config.json`**：使用者的手機號碼與載具驗證密碼配置檔（系統啟動時若不存在會自動生成範本）。
-* **`user_data/invoices/`**：存放從大平台下載的原始發票 CSV 檔案。
-* **`user_data/invoice_data.json`**：由 Python 數據清洗引擎產出的最終 JSON 財務數據庫，前端直接讀取此檔呈現。
+### 開發者原始碼目錄 (開發測試)
+* **[developer_source/](developer_source)**：所有的程式原始碼與開發設定檔皆收納在此：
+  * `src/`：React 前端 UI 元件與主要邏輯。
+  * `ml_classifier/`：NLP + 機器學習智慧分類模組（包含模型訓練、數據集與預測器）。
+  * `public/`：前端靜態素材（例如 Favicon 圖標）。
+  * `app_server.py`：本機 Web API 伺服器代碼。
+  * `browser_crawler.py`：Playwright 網頁爬蟲自動化代碼。
+  * `data_cleaner.py`：Pandas 資料洗滌代碼。
+  * `mof_api.py`：財政部 E-Invoice API 客戶端。
+  * `package.json` / `vite.config.js` / `錢去哪了-發票財務儀表板.spec`：前端及 PyInstaller 打包設定檔。
 
 ---
 
-## 🛠️ 環境準備與設定
+## 🛠️ 開發與測試指南 (僅開發者需要)
 
-本系統需要 **Python 3.8+** 與 **Node.js 16+** 環境。
+如果您需要對程式進行二次開發、調整功能或重新打包，請按照以下說明操作：
 
-### 步驟 1：安裝 Python 依賴與機器學習庫
-請在終端機中執行以下命令：
+### 步驟 1：安裝環境與依賴
+1. 請確認您已安裝 **Python 3.8+** 與 **Node.js 16+** 環境。
+2. 開啟終端機並切換至 `developer_source/` 子目錄下：
+   ```bash
+   cd developer_source
+   ```
+3. 安裝 Python 依賴包：
+   ```bash
+   pip install pandas requests playwright jieba scikit-learn
+   # 安裝 Playwright 瀏覽器核心 (Chromium)
+   playwright install chromium
+   ```
+4. 安裝前端 Node.js 依賴包：
+   ```bash
+   npm install
+   ```
+
+### 步驟 2：啟動開發模式
+在 `developer_source/` 目錄下執行：
 ```bash
-# 安裝 Pandas、網路請求與 Playwright 爬蟲庫
-pip install pandas requests playwright
-
-# 安裝中文分詞 jieba 與機器學習 scikit-learn 庫
-pip install jieba scikit-learn
-
-# 安裝 Playwright 瀏覽器核心 (Chromium)
-playwright install chromium
+npm run dev
 ```
+按住 `Ctrl` 鍵點擊終端機顯示的 `http://localhost:5173` 即可開啟網頁。
+> [!NOTE]
+> 即使在 `developer_source/` 下啟動開發模式，系統也會自動識別並精準讀寫**專案根目錄下的 `user_data/`** 資料夾中的設定檔與發票數據，保持資料的一致性。
 
-### 步驟 2：安裝前端 Node 依賴
-在專案根目錄下執行：
-```bash
-npm install
-```
-
-### 步驟 3：設定設定檔 `user_data/config.json`
-首次執行爬蟲或伺服器時，系統會自動在專案目錄下建立 `user_data/config.json`。請使用文字編輯器打開它並修改對應欄位：
+### 步驟 3：修改密碼設定
+如果需要在本地直接填入帳密以便同步時自動登入，請使用文字編輯器打開根目錄下的 `user_data/config.json` 並修改：
 ```json
 {
-  "phoneNo": "0912345678",              // 您的手機號碼 (10碼)
-  "verificationCode": "/YOUR_PASSWORD"  // 您的載具密碼 (首字通常為 /)
+  "phoneNo": "0912345678",
+  "verificationCode": "/YOUR_PASSWORD"
 }
 ```
 
 ---
 
-## 📖 操作與使用指南
+## 📦 重新打包 EXE (目錄模式)
 
-### 本地開發模式
-1. 啟動前端開發伺服器：
+當您修改了 `developer_source/` 中的代碼後，如果想重新打包為最新的 `.exe`：
+
+1. 在 `developer_source/` 目錄下編譯前端靜態資源：
    ```bash
-   npm run dev
+   npm run build
    ```
-2. 按住 Ctrl 鍵點擊終端機產出的 `http://localhost:5173` 連結。
-3. 點選網頁右上角的「同步發票」按鈕，系統會啟動 Playwright 瀏覽器，自動填入帳密，手動輸入「圖形驗證碼」並登入成功後，選擇日期範圍並點選「下載明細 CSV」。
-4. 爬蟲將會自動把 CSV 儲存至 `user_data/invoices/`，並自動觸發洗滌模組，更新 `user_data/invoice_data.json`。網頁會自動重新載入呈現您的真實財務看板！
+2. 安裝 PyInstaller（若尚未安裝）：
+   ```bash
+   pip install pyinstaller
+   ```
+3. 執行 PyInstaller 打包指令（規格設定已包含在 `錢去哪了-發票財務儀表板.spec` 中）：
+   ```bash
+   pyinstaller --clean 錢去哪了-發票財務儀表板.spec
+   ```
+4. 打包完成後，會生成一個 `dist/錢去哪了-發票財務儀表板/` 目錄。
+5. 將該目錄下的 `_internal/` 以及 `錢去哪了-發票財務儀表板.exe` 剪下，並覆蓋回**專案根目錄**下即可完成更新！
 
----
-
-## 📦 封裝與分享 (極速啟動優化)
-
-如果您想要將這個系統分享給沒有程式開發背景的朋友，可以將其封裝為一個免安裝的應用程式資料夾，並壓縮後分享：
-
-### 1. 編譯前端靜態檔案
-```bash
-npm run build
-```
-
-### 2. 安裝 PyInstaller
-```bash
-pip install pyinstaller
-```
-
-### 3. 執行打包指令
-我們已經將優化後的設定寫入 `錢去哪了-發票財務儀表板.spec`。請直接使用專案內的規格檔進行編譯：
-```bash
-pyinstaller --clean 錢去哪了-發票財務儀表板.spec
-```
-> [!TIP]
-> **為什麼不打包成單一 `.exe` 檔案？**
-> 單一 `.exe` 檔案在每次執行時，都必須將所有 Python 執行庫與 Playwright 驅動程式解壓縮至暫存資料夾，這在 Windows 系統中會造成 10~15 秒的啟動延遲。使用 `.spec` 預設的目錄模式 (`--onedir`) 封裝後，應用程式可實現**秒開啟動**，體驗極佳。
-
-### 4. 分享給朋友
-編譯完成後，您會在專案的 `dist/` 中看到一個名為 **`錢去哪了-發票財務儀表板`** 的資料夾：
-1. 將該資料夾壓縮為 `.zip` 檔傳送給朋友。
-2. 朋友解壓縮後，雙擊資料夾內的 **`錢去哪了-發票財務儀表板.exe`** 即可啟動（無需安裝 Python 與 Node.js）。
-3. 系統會在 `.exe` 的同級目錄下自動建立 `user_data/` 資料夾，並生成預設 `config.json` 設定檔。
-4. 朋友只需在同級 `user_data/config.json` 填入自己的手機載具帳密，重新開啟程式即可同步與檢視其真實的發票財務看板。

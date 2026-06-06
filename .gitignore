@@ -58,3 +58,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Compiled files in root
+_internal/
+錢去哪了-發票財務儀表板.exe

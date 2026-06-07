@@ -172,6 +172,19 @@ function App() {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowRulesModal(false);
+        setShowSyncRangeModal(false);
+        setShowRefundModal(false);
+        setShowSellerModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const getCalendarDays = (year, month) => {
     const firstDay = new Date(year, month, 1);
     const dayOfWeek = firstDay.getDay();
@@ -676,17 +689,23 @@ function App() {
   };
 
   const handleAddRule = async () => {
-    if (!newRuleKeyword.trim()) return;
+    if (!newRuleKeyword.trim()) {
+      alert('請先輸入檢核關鍵字！');
+      return;
+    }
     const kw = newRuleKeyword.trim();
     
     const updatedRules = JSON.parse(JSON.stringify(customRules));
     if (!updatedRules[newRuleType]) updatedRules[newRuleType] = {};
     const categoryRules = updatedRules[newRuleType][newRuleCategory] || [];
     
-    if (!categoryRules.includes(kw)) {
-      categoryRules.push(kw);
-      updatedRules[newRuleType][newRuleCategory] = categoryRules;
+    if (categoryRules.includes(kw)) {
+      alert('此自訂規則已存在！');
+      return;
     }
+    
+    categoryRules.push(kw);
+    updatedRules[newRuleType][newRuleCategory] = categoryRules;
     
     try {
       const response = await fetch('/api/custom-rules', {
@@ -697,6 +716,7 @@ function App() {
       if (response.ok) {
         setCustomRules(updatedRules);
         setNewRuleKeyword('');
+        alert('自訂規則新增成功！');
       } else {
         alert('儲存規則失敗');
       }
@@ -968,7 +988,7 @@ function App() {
           gap: '1.5rem',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)'
+          background: activeTheme === 'emerald-light' ? '#ffffff' : 'var(--bg-card)'
         }}>
           {/* Modal Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
@@ -1108,7 +1128,7 @@ function App() {
           gap: '1.5rem',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)',
+          background: activeTheme === 'emerald-light' ? '#ffffff' : 'var(--bg-card)',
           overflowY: 'auto'
         }}>
           {/* Modal Header */}
@@ -1144,8 +1164,8 @@ function App() {
 
           {/* Part 1: 新增自訂規則表單 */}
           <div style={{
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid var(--border-color)',
+            background: activeTheme === 'emerald-light' ? '#f8fafc' : 'rgba(255,255,255,0.02)',
+            border: activeTheme === 'emerald-light' ? '1px solid rgba(15, 118, 110, 0.15)' : '1px solid var(--border-color)',
             borderRadius: '12px',
             padding: '1.25rem',
             display: 'flex',
@@ -1174,8 +1194,8 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="item_keywords">品項名稱關鍵字</option>
-                  <option value="seller_keywords">商家名稱關鍵字</option>
+                  <option value="item_keywords" style={{ color: '#111827', background: '#ffffff' }}>品項名稱關鍵字</option>
+                  <option value="seller_keywords" style={{ color: '#111827', background: '#ffffff' }}>商家名稱關鍵字</option>
                 </select>
               </div>
 
@@ -1196,7 +1216,7 @@ function App() {
                   }}
                 >
                   {Object.keys(CATEGORY_COLORS).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat} style={{ color: '#111827', background: '#ffffff' }}>{cat}</option>
                   ))}
                 </select>
               </div>
@@ -1223,10 +1243,9 @@ function App() {
 
               <button
                 onClick={handleAddRule}
+                className="chart-btn active"
                 style={{
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
                   border: 'none',
-                  color: '#fff',
                   padding: '0.5rem 1.25rem',
                   borderRadius: '6px',
                   fontSize: '0.85rem',
@@ -1373,8 +1392,8 @@ function App() {
 
           {/* Part 3: 手動重新資料清洗 */}
           <div style={{
-            background: 'rgba(99, 102, 241, 0.04)',
-            border: '1px solid rgba(99, 102, 241, 0.2)',
+            background: activeTheme === 'emerald-light' ? 'rgba(15, 118, 110, 0.04)' : 'rgba(99, 102, 241, 0.04)',
+            border: activeTheme === 'emerald-light' ? '1px solid rgba(15, 118, 110, 0.15)' : '1px solid rgba(99, 102, 241, 0.2)',
             borderRadius: '12px',
             padding: '1.25rem',
             display: 'flex',
@@ -1463,7 +1482,7 @@ function App() {
           gap: '1.5rem',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
           border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)'
+          background: activeTheme === 'emerald-light' ? '#ffffff' : 'var(--bg-card)'
         }}>
           <div className={`kpi-icon-container ${isError ? 'red' : 'blue'}`} style={{ width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isError ? (

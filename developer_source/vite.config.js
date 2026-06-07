@@ -129,6 +129,75 @@ const crawlerApiPlugin = () => ({
           res.end(JSON.stringify({ status: 'idle', message: '準備就緒', step: 'idle', error: null }))
         }
         
+      } else if (url.pathname === '/api/custom-rules') {
+        let baseDir = process.cwd();
+        if (path.basename(baseDir) === 'developer_source') {
+          baseDir = path.dirname(baseDir);
+        }
+        const configPath = path.join(baseDir, 'user_data', 'config.json')
+
+        if (req.method === 'GET') {
+          res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*'
+          })
+          let rules = { item_keywords: {}, seller_keywords: {} }
+          if (fs.existsSync(configPath)) {
+            try {
+              const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+              rules = config.custom_rules || rules
+            } catch (e) {}
+          }
+          res.end(JSON.stringify(rules))
+        } else if (req.method === 'POST') {
+          let body = ''
+          req.on('data', chunk => { body += chunk.toString() })
+          req.on('end', () => {
+            try {
+              const newRules = JSON.parse(body)
+              let config = {}
+              if (fs.existsSync(configPath)) {
+                config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+              }
+              config.custom_rules = newRules
+              fs.mkdirSync(path.dirname(configPath), { recursive: true })
+              fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
+              
+              res.writeHead(200, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Access-Control-Allow-Origin': '*'
+              })
+              res.end(JSON.stringify({ success: true }))
+            } catch (e) {
+              res.writeHead(500, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Access-Control-Allow-Origin': '*'
+              })
+              res.end(JSON.stringify({ success: false, error: e.message }))
+            }
+          })
+        }
+      } else if (url.pathname === '/api/run-cleaner' && req.method === 'POST') {
+        let baseDir = process.cwd();
+        if (path.basename(baseDir) === 'developer_source') {
+          baseDir = path.dirname(baseDir);
+        }
+        
+        console.log('[DevServer] 收到手動資料清洗請求...')
+        
+        const pyProcess = spawn('python', ['data_cleaner.py'], {
+          cwd: path.join(baseDir, 'developer_source'),
+          shell: true
+        })
+        
+        pyProcess.on('close', (code) => {
+          console.log(`[DevServer] 手動資料清洗執行完畢，結束代碼: ${code}`)
+          res.writeHead(code === 0 ? 200 : 500, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Access-Control-Allow-Origin': '*'
+          })
+          res.end(JSON.stringify({ success: code === 0 }))
+        })
       } else if (url.pathname === '/data/invoice_data.json') {
         let baseDir = process.cwd();
         if (path.basename(baseDir) === 'developer_source') {

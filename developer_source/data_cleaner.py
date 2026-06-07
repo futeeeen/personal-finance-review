@@ -23,6 +23,27 @@ def get_user_data_path(*paths):
 # 用於快取從 CSV 解析出來的品項明細
 _csv_details_cache = {}
 
+# 全域自訂規則快取，避免重複讀取磁碟
+_custom_item_rules = {}
+_custom_seller_rules = {}
+
+def load_custom_rules():
+    """載入 user_data/config.json 中的自訂規則"""
+    global _custom_item_rules, _custom_seller_rules
+    _custom_item_rules = {}
+    _custom_seller_rules = {}
+    try:
+        config_path = get_user_data_path("config.json")
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+                custom_rules = config.get("custom_rules", {})
+                _custom_item_rules = custom_rules.get("item_keywords", {})
+                _custom_seller_rules = custom_rules.get("seller_keywords", {})
+    except Exception as e:
+        print(f"[Cleaner] 載入自訂規則失敗: {e}")
+
+
 def parse_taiwan_date(date_str):
     """
     將民國年或標準西元年月日字串解析成標準 datetime 物件。
@@ -165,6 +186,14 @@ def classify_item(item_desc, seller_name):
     ]
 
     # --------------------------------------------------
+    # 【第一階段自訂：自訂品項關鍵字匹配】 優先權最高
+    # --------------------------------------------------
+    for category, kws in _custom_item_rules.items():
+        if isinstance(kws, list):
+            if any(str(kw).lower() in desc for kw in kws if kw):
+                return category
+
+    # --------------------------------------------------
     # 【第一階段：品項關鍵字匹配】 最具特異性，優先檢測
     # --------------------------------------------------
     if any(kw in desc for kw in trans_kws):
@@ -179,6 +208,14 @@ def classify_item(item_desc, seller_name):
         return '娛樂'
     if any(kw in desc for kw in food_kws):
         return '飲食'
+
+    # --------------------------------------------------
+    # 【第二階段自訂：自訂商家關鍵字匹配】 優先權最高
+    # --------------------------------------------------
+    for category, kws in _custom_seller_rules.items():
+        if isinstance(kws, list):
+            if any(str(kw).lower() in seller for kw in kws if kw):
+                return category
 
     # --------------------------------------------------
     # 【第二階段：商家名稱模糊匹配】 當品項無特徵時的兜底分類
@@ -488,7 +525,11 @@ def parse_downloaded_csv(csv_file):
     print(f"[Cleaner] CSV 發票清單解析完畢，共解析出 {len(invoices)} 張獨立發票！")
     return invoices
 
-def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
+def clean_and_process_invoices(start_date=None, end_date=None):
+    if start_date is None:
+        start_date = "2025/01/01"
+    if end_date is None:
+        end_date = datetime.now().strftime("%Y/%m/%d")
     """
     呼叫客戶端獲取發票並進行 Pandas 資料清洗與視覺化彙整
     優先順序：
@@ -496,6 +537,9 @@ def clean_and_process_invoices(start_date="2026/01/01", end_date="2026/05/29"):
     2. 若無，則呼叫 Mof Client（依據 config.json 決定真實 API 或 Mock 模擬資料）。
     """
     print("[Cleaner] 開始執行資料撈取與清洗流程...")
+    
+    # 載入使用者自訂分類規則
+    load_custom_rules()
     
     global _csv_details_cache
     _csv_details_cache = {}

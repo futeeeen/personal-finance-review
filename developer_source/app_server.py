@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import time
 import webbrowser
 import threading
 import urllib.parse
@@ -49,6 +50,9 @@ class SPAAndApiHandler(SimpleHTTPRequestHandler):
             return
         elif clean_path == '/api/crawler-status':
             self.handle_crawler_status()
+            return
+        elif clean_path == '/api/custom-rules':
+            self.handle_get_custom_rules()
             return
 
         # 優先服務本地 Cwd 產出的真實發票資料庫，避免讀取打包在 exe 內的唯讀/舊資料
@@ -178,6 +182,88 @@ class SPAAndApiHandler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps(status_data).encode('utf-8'))
+
+    def do_POST(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        clean_path = parsed_url.path
+
+        if clean_path == '/api/custom-rules':
+            self.handle_save_custom_rules()
+            return
+        elif clean_path == '/api/run-cleaner':
+            self.handle_run_cleaner()
+            return
+            
+        self.send_error(404, "Not Found")
+
+    def handle_get_custom_rules(self):
+        config_file = get_user_data_path("config.json")
+        rules = {"item_keywords": {}, "seller_keywords": {}}
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+                    rules = config.get("custom_rules", rules)
+            except Exception as e:
+                print(f"[本地伺服器] 讀取自訂規則失敗: {e}")
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        self.wfile.write(json.dumps(rules, ensure_ascii=False).encode('utf-8'))
+
+    def handle_save_custom_rules(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        try:
+            new_rules = json.loads(post_data.decode('utf-8'))
+            config_file = get_user_data_path("config.json")
+            config = {}
+            if os.path.exists(config_file):
+                with open(config_file, "r", encoding="utf-8") as f:
+                    config = json.load(f)
+            
+            config["custom_rules"] = new_rules
+            
+            os.makedirs(os.path.dirname(config_file), exist_ok=True)
+            with open(config_file, "w", encoding="utf-8") as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+                
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True}).encode('utf-8'))
+        except Exception as e:
+            print(f"[本地伺服器] 儲存自訂規則失敗: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+
+    def handle_run_cleaner(self):
+        try:
+            import data_cleaner
+            from datetime import datetime
+            today_str = datetime.now().strftime("%Y/%m/%d")
+            
+            # 觸發清洗，使用較寬的起迄時間
+            success = data_cleaner.clean_and_process_invoices(start_date="2025/01/01", end_date=today_str)
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": success}).encode('utf-8'))
+        except Exception as e:
+            print(f"[本地伺服器] 手動資料清洗出錯: {e}")
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
 
 def start_server():
     # 檢查 dist 目錄是否存在

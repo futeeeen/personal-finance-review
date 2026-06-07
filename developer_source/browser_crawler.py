@@ -60,6 +60,18 @@ def load_config():
     return {}
 
 def run_browser_automation():
+    try:
+        _run_browser_automation_impl()
+    except Exception as e:
+        print(f"\n[錯誤] 同步執行異常: {e}")
+        err_msg = str(e)
+        user_friendly_msg = f"同步中斷: {err_msg}。"
+        if "Target page, context or browser has been closed" in err_msg or "Target closed" in err_msg or "Browser closed" in err_msg or "target_closed" in err_msg.lower():
+            user_friendly_msg = "同步中斷：瀏覽器視窗已被關閉。如果您是手動關閉視窗，這是正常現象，您可以隨時點選重新同步。"
+        update_crawler_status("error", user_friendly_msg, "error", err_msg)
+        raise e
+
+def _run_browser_automation_impl():
     import sys
     from datetime import datetime, timedelta
     

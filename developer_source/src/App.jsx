@@ -33,7 +33,10 @@ import {
   HelpCircle,
   Palette,
   CalendarRange,
-  Sparkles
+  Sparkles,
+  Settings,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 // 定義分類的色彩映射 (對應 CSS 變數，支援風格切換時即時變色)
@@ -609,6 +612,16 @@ function App() {
   const [startDate, setStartDate] = useState(getEarliestSelectableDateStr());
   const [endDate, setEndDate] = useState(getTodayStr());
 
+  const [showSyncRangeModal, setShowSyncRangeModal] = useState(false);
+  
+  // 自訂分類規則管理狀態
+  const [customRules, setCustomRules] = useState({ item_keywords: {}, seller_keywords: {} });
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [newRuleType, setNewRuleType] = useState('item_keywords'); // 'item_keywords' or 'seller_keywords'
+  const [newRuleCategory, setNewRuleCategory] = useState('飲食');
+  const [newRuleKeyword, setNewRuleKeyword] = useState('');
+  const [cleaningActive, setCleaningActive] = useState(false);
+
   useEffect(() => {
     fetchInvoiceData();
   }, []);
@@ -630,7 +643,10 @@ function App() {
       // 動態更新爬蟲起迄預設日期，以「接續抓取未來發生的新發票」為主要目標
       if (jsonData.summary && jsonData.summary.maxDate) {
         setStartDate(jsonData.summary.maxDate);
+      } else {
+        setStartDate(getEarliestSelectableDateStr());
       }
+      setEndDate(getTodayStr());
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -639,7 +655,118 @@ function App() {
     }
   };
 
+  const fetchCustomRules = async () => {
+    try {
+      const response = await fetch('/api/custom-rules');
+      if (response.ok) {
+        const data = await response.json();
+        setCustomRules({
+          item_keywords: data.item_keywords || {},
+          seller_keywords: data.seller_keywords || {}
+        });
+      }
+    } catch (err) {
+      console.error('取得自訂規則失敗:', err);
+    }
+  };
+
+  const handleOpenRulesModal = async () => {
+    await fetchCustomRules();
+    setShowRulesModal(true);
+  };
+
+  const handleAddRule = async () => {
+    if (!newRuleKeyword.trim()) return;
+    const kw = newRuleKeyword.trim();
+    
+    const updatedRules = JSON.parse(JSON.stringify(customRules));
+    if (!updatedRules[newRuleType]) updatedRules[newRuleType] = {};
+    const categoryRules = updatedRules[newRuleType][newRuleCategory] || [];
+    
+    if (!categoryRules.includes(kw)) {
+      categoryRules.push(kw);
+      updatedRules[newRuleType][newRuleCategory] = categoryRules;
+    }
+    
+    try {
+      const response = await fetch('/api/custom-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRules)
+      });
+      if (response.ok) {
+        setCustomRules(updatedRules);
+        setNewRuleKeyword('');
+      } else {
+        alert('儲存規則失敗');
+      }
+    } catch (err) {
+      console.error('儲存規則失敗:', err);
+      alert('儲存規則出錯: ' + err.message);
+    }
+  };
+
+  const handleDeleteRule = async (type, category, keywordToDelete) => {
+    const updatedRules = JSON.parse(JSON.stringify(customRules));
+    if (updatedRules[type] && updatedRules[type][category]) {
+      updatedRules[type][category] = updatedRules[type][category].filter(kw => kw !== keywordToDelete);
+      if (updatedRules[type][category].length === 0) {
+        delete updatedRules[type][category];
+      }
+    }
+    
+    try {
+      const response = await fetch('/api/custom-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedRules)
+      });
+      if (response.ok) {
+        setCustomRules(updatedRules);
+      } else {
+        alert('刪除規則失敗');
+      }
+    } catch (err) {
+      console.error('刪除規則失敗:', err);
+      alert('刪除規則出錯: ' + err.message);
+    }
+  };
+
+  const handleManualClean = async () => {
+    setCleaningActive(true);
+    try {
+      const response = await fetch('/api/run-cleaner', {
+        method: 'POST'
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          alert('資料清洗成功！財務分析儀表板已完成更新。');
+          await fetchInvoiceData();
+        } else {
+          alert('資料清洗失敗，請確認是否成功下載/放置 CSV 發票檔。');
+        }
+      } else {
+        alert('無法觸發清洗服務，請檢查後端連線！');
+      }
+    } catch (err) {
+      console.error('清洗執行出錯:', err);
+      alert('執行清洗出錯: ' + err.message);
+    } finally {
+      setCleaningActive(false);
+    }
+  };
+
+  const handleOpenSyncRangeModal = () => {
+    const latestLocalStr = data?.summary?.maxDate || getEarliestSelectableDateStr();
+    const todayStr = getTodayStr();
+    setStartDate(latestLocalStr);
+    setEndDate(todayStr);
+    setShowSyncRangeModal(true);
+  };
+
   const handleRunCrawler = async () => {
+    setShowSyncRangeModal(false);
     setCrawlerLoading(true);
     setCrawlerError(null);
     setCrawlerSuccess(false);
@@ -649,15 +776,8 @@ function App() {
     let intervalId = null;
 
     try {
-      // 自動使用本地最新發票日期及今天日期範圍進行下載，避免手動輸入
-      const latestLocalStr = data?.summary?.maxDate || getEarliestSelectableDateStr();
-      const todayStr = getTodayStr();
-      
-      setStartDate(latestLocalStr);
-      setEndDate(todayStr);
-      
-      const startFormatted = latestLocalStr.replace(/-/g, '/');
-      const endFormatted = todayStr.replace(/-/g, '/');
+      const startFormatted = startDate.replace(/-/g, '/');
+      const endFormatted = endDate.replace(/-/g, '/');
       
       const response = await fetch(`/api/run-crawler?start=${startFormatted}&end=${endFormatted}`);
       if (!response.ok) {
@@ -818,6 +938,495 @@ function App() {
             </div>
           );
         })}
+      </div>
+    );
+  };
+
+  const renderSyncRangeModal = () => {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(12px)',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.5rem',
+        animation: 'fadeIn 0.25s ease'
+      }}>
+        <div className="glass-card" style={{
+          maxWidth: '450px',
+          width: '100%',
+          padding: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-card)'
+        }}>
+          {/* Modal Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="kpi-icon-container blue" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
+                <CalendarRange size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>選擇同步時間範圍</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>預設為最近一筆發票日期至今天</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowSyncRangeModal(false)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: 'none',
+                color: 'var(--text-primary)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Modal Content */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>起始日期</label>
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '8px',
+                  padding: '0.6rem 0.8rem',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>結束日期</label>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '8px',
+                  padding: '0.6rem 0.8rem',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1.2rem', marginTop: '0.5rem' }}>
+            <button 
+              onClick={() => setShowSyncRangeModal(false)}
+              className="chart-btn"
+              style={{ 
+                padding: '0.5rem 1.2rem', 
+                borderRadius: '8px',
+                background: 'none',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer'
+              }}
+            >
+              取消
+            </button>
+            <button 
+              onClick={handleRunCrawler}
+              className="chart-btn active"
+              style={{ 
+                padding: '0.5rem 1.5rem', 
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                border: 'none',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)'
+              }}
+            >
+              開始同步
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderRulesModal = () => {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(12px)',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1.5rem',
+        animation: 'fadeIn 0.25s ease'
+      }}>
+        <div className="glass-card" style={{
+          maxWidth: '700px',
+          width: '100%',
+          maxHeight: '90vh',
+          padding: '2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-card)',
+          overflowY: 'auto'
+        }}>
+          {/* Modal Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="kpi-icon-container purple" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
+                <Settings size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>客製規則與資料更新</h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>管理自訂分類關鍵字或手動重啟資料清洗</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowRulesModal(false)}
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: 'none',
+                color: 'var(--text-primary)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Part 1: 新增自訂規則表單 */}
+          <div style={{
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1rem'
+          }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Plus size={16} style={{ color: 'var(--primary)' }} />
+              新增自訂分類規則
+            </h4>
+            
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 140px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>規則類型</span>
+                <select
+                  value={newRuleType}
+                  onChange={(e) => setNewRuleType(e.target.value)}
+                  style={{
+                    background: 'var(--bg-item)',
+                    border: '1px solid var(--border-item)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="item_keywords">品項名稱關鍵字</option>
+                  <option value="seller_keywords">商家名稱關鍵字</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '1 1 120px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>歸入分類</span>
+                <select
+                  value={newRuleCategory}
+                  onChange={(e) => setNewRuleCategory(e.target.value)}
+                  style={{
+                    background: 'var(--bg-item)',
+                    border: '1px solid var(--border-item)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '6px',
+                    padding: '0.5rem',
+                    fontSize: '0.85rem',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {Object.keys(CATEGORY_COLORS).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: '2 1 200px' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>關鍵字（不區分大小寫）</span>
+                <input
+                  type="text"
+                  placeholder="例如：星巴克、Apple、Netflix"
+                  value={newRuleKeyword}
+                  onChange={(e) => setNewRuleKeyword(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddRule(); }}
+                  style={{
+                    background: 'var(--bg-item)',
+                    border: '1px solid var(--border-item)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '6px',
+                    padding: '0.5rem 0.75rem',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={handleAddRule}
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 6px rgba(99, 102, 241, 0.2)'
+                }}
+              >
+                新增規則
+              </button>
+            </div>
+          </div>
+
+          {/* Part 2: 已設定規則清單 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              現有客製化規則
+            </h4>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+              {/* 品項關鍵字 */}
+              <div>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.6rem' }}>品項關鍵字規則</h5>
+                {Object.keys(customRules.item_keywords || {}).length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.5rem' }}>目前無自訂品項關鍵字</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {Object.entries(customRules.item_keywords).map(([category, kws]) => (
+                      <div key={category} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <span style={{
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          background: `color-mix(in srgb, ${CATEGORY_COLORS[category] || CATEGORY_COLORS['其它']} 15%, transparent)`,
+                          color: CATEGORY_COLORS[category] || CATEGORY_COLORS['其它'],
+                          border: `1px solid color-mix(in srgb, ${CATEGORY_COLORS[category] || CATEGORY_COLORS['其它']} 25%, transparent)`,
+                          minWidth: '55px',
+                          textAlign: 'center'
+                        }}>
+                          {category}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {kws.map(kw => (
+                            <span key={kw} style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid var(--border-color)',
+                              color: 'var(--text-secondary)',
+                              borderRadius: '4px',
+                              padding: '0.15rem 0.4rem',
+                              fontSize: '0.78rem'
+                            }}>
+                              {kw}
+                              <span 
+                                onClick={() => handleDeleteRule('item_keywords', category, kw)}
+                                style={{
+                                  cursor: 'pointer',
+                                  color: 'var(--text-muted)',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.7rem',
+                                  marginLeft: '0.1rem'
+                                }}
+                                onMouseEnter={(e) => { e.target.style.color = 'var(--danger)'; }}
+                                onMouseLeave={(e) => { e.target.style.color = 'var(--text-muted)'; }}
+                              >
+                                ✕
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 商家關鍵字 */}
+              <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '1rem' }}>
+                <h5 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary)', marginBottom: '0.6rem' }}>商家關鍵字規則</h5>
+                {Object.keys(customRules.seller_keywords || {}).length === 0 ? (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '0.5rem' }}>目前無自訂商家關鍵字</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {Object.entries(customRules.seller_keywords).map(([category, kws]) => (
+                      <div key={category} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <span style={{
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '4px',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          background: `color-mix(in srgb, ${CATEGORY_COLORS[category] || CATEGORY_COLORS['其它']} 15%, transparent)`,
+                          color: CATEGORY_COLORS[category] || CATEGORY_COLORS['其它'],
+                          border: `1px solid color-mix(in srgb, ${CATEGORY_COLORS[category] || CATEGORY_COLORS['其它']} 25%, transparent)`,
+                          minWidth: '55px',
+                          textAlign: 'center'
+                        }}>
+                          {category}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          {kws.map(kw => (
+                            <span key={kw} style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid var(--border-color)',
+                              color: 'var(--text-secondary)',
+                              borderRadius: '4px',
+                              padding: '0.15rem 0.4rem',
+                              fontSize: '0.78rem'
+                            }}>
+                              {kw}
+                              <span 
+                                onClick={() => handleDeleteRule('seller_keywords', category, kw)}
+                                style={{
+                                  cursor: 'pointer',
+                                  color: 'var(--text-muted)',
+                                  fontWeight: 'bold',
+                                  fontSize: '0.7rem',
+                                  marginLeft: '0.1rem'
+                                }}
+                                onMouseEnter={(e) => { e.target.style.color = 'var(--danger)'; }}
+                                onMouseLeave={(e) => { e.target.style.color = 'var(--text-muted)'; }}
+                              >
+                                ✕
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Part 3: 手動重新資料清洗 */}
+          <div style={{
+            background: 'rgba(99, 102, 241, 0.04)',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            borderRadius: '12px',
+            padding: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            marginTop: '0.5rem'
+          }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <RefreshCw size={16} style={{ color: 'var(--primary)' }} />
+              手動重啟資料清洗
+            </h4>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+              如果您手動放置了發票 CSV 或 Excel 檔案到 <code>user_data/</code> 資料夾中，或者您剛剛更新了客製的分類關鍵字規則，請點選下方按鈕重新觸發資料清洗，以使更新反映到儀表板上。
+            </p>
+            
+            <button
+              onClick={handleManualClean}
+              disabled={cleaningActive}
+              style={{
+                background: cleaningActive ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.65rem 1.5rem',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: cleaningActive ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                boxShadow: cleaningActive ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.2)',
+                transition: 'all 0.2s ease',
+                marginTop: '0.25rem'
+              }}
+            >
+              <RefreshCw size={14} className={cleaningActive ? 'spin' : ''} />
+              {cleaningActive ? '正在重新進行資料清洗與分類中...' : '重啟資料清洗並更新儀表板'}
+            </button>
+          </div>
+
+          {/* Modal Footer */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+            <button 
+              onClick={() => setShowRulesModal(false)}
+              className="chart-btn active"
+              style={{ padding: '0.5rem 1.5rem', borderRadius: '8px' }}
+            >
+              關閉視窗
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1041,33 +1650,65 @@ function App() {
             </div>
           </div>
           
-          <button 
-            onClick={handleRunCrawler}
-            disabled={crawlerLoading}
-            style={{
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-              border: 'none',
-              color: '#fff',
-              padding: '0.6rem 1.5rem',
-              borderRadius: '0.75rem',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: crawlerLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-              transition: 'all 0.2s ease',
-              marginTop: '0.5rem'
-            }}
-          >
-            <RefreshCw size={16} className={crawlerLoading ? 'spin' : ''} />
-            {crawlerLoading ? '正在同步雲端發票...' : '一鍵同步雲端發票'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button 
+              onClick={handleRunCrawler}
+              disabled={crawlerLoading}
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                border: 'none',
+                color: '#fff',
+                padding: '0.6rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: crawlerLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={16} className={crawlerLoading ? 'spin' : ''} />
+              {crawlerLoading ? '正在同步雲端發票...' : '一鍵同步雲端發票'}
+            </button>
+
+            <button 
+              onClick={handleOpenRulesModal}
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--border-color)',
+                color: '#fff',
+                padding: '0.6rem 1.5rem',
+                borderRadius: '0.75rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.border = '1px solid var(--primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.border = '1px solid var(--border-color)';
+              }}
+            >
+              <Settings size={16} />
+              更新現有資料
+            </button>
+          </div>
         </div>
         
         {/* 全螢幕載入遮罩 */}
         {crawlerLoading && renderCrawlerLoadingOverlay()}
+        {showSyncRangeModal && renderSyncRangeModal()}
+        {showRulesModal && renderRulesModal()}
         
         {crawlerError && (
           <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '-1.5rem', marginBottom: '1.5rem' }}>
@@ -1383,7 +2024,7 @@ function App() {
           <div className="glass-card crawler-panel" style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '1.25rem', 
+            gap: '1rem', 
             padding: '0.6rem 1.2rem', 
             borderRadius: '12px',
             border: '1px solid var(--border-color)',
@@ -1402,28 +2043,59 @@ function App() {
             
             <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
             
-            <button 
-              onClick={handleRunCrawler}
-              disabled={crawlerLoading}
-              style={{
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
-                border: 'none',
-                color: '#fff',
-                padding: '0.6rem 1.2rem',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: crawlerLoading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
-              {crawlerLoading ? '正在同步...' : '同步雲端發票'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                onClick={handleOpenSyncRangeModal}
+                disabled={crawlerLoading}
+                style={{
+                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)',
+                  border: 'none',
+                  color: '#fff',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: crawlerLoading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <RefreshCw size={14} className={crawlerLoading ? 'spin' : ''} />
+                {crawlerLoading ? '正在同步...' : '同步雲端發票'}
+              </button>
+
+              <button 
+                onClick={handleOpenRulesModal}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '8px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.border = '1px solid var(--primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.border = '1px solid var(--border-color)';
+                }}
+              >
+                <Settings size={14} />
+                更新現有資料
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2729,6 +3401,11 @@ function App() {
       <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
         臺灣財政部電子發票自動介接系統庫 • 專案連結：<a href="https://github.com/futeeeen/personal-finance-review.git" target="_blank" style={{ color: 'var(--primary)' }}>personal-finance-review</a>
       </div>
+
+      {/* 彈出與遮罩元件 */}
+      {crawlerLoading && renderCrawlerLoadingOverlay()}
+      {showSyncRangeModal && renderSyncRangeModal()}
+      {showRulesModal && renderRulesModal()}
     </div>
   );
 }
